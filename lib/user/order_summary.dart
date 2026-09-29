@@ -1,6 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../components/guest_page.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
+import 'payment.dart';
 
 class OrderSummaryPage extends StatefulWidget {
   const OrderSummaryPage({super.key});
@@ -21,6 +24,80 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
 
   int quantity = 1;
   bool editAddress = false;
+  bool isSaving = false;
+
+  // Builds a readable order number such as ORD-48213.
+  String makeOrderId() {
+    return 'ORD-${DateTime.now().millisecondsSinceEpoch % 100000}';
+  }
+
+  String makeDate() {
+    final now = DateTime.now();
+    final day = now.day.toString().padLeft(2, '0');
+    final month = now.month.toString().padLeft(2, '0');
+    final year = now.year;
+    return '$day/$month/$year';
+  }
+
+  // Writes the order into the shared "orders" collection so that both the
+  // customer and the shop owner can see it.
+  Future<void> saveOrder() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      showMessage('Please login before placing an order.');
+      return;
+    }
+
+    setState(() {
+      isSaving = true;
+    });
+
+    final total = pricePerSquareFoot * sheetArea * quantity;
+
+    try {
+      await FirebaseFirestore.instance.collection('orders').add({
+        'orderId': makeOrderId(),
+        'userId': currentUser.uid,
+        'customerName': currentUser.displayName ?? currentUser.email ?? '',
+        'name': 'Club Prime Plywood',
+        'brand': 'CenturyPly',
+        'thickness': '19 mm',
+        'quantity': quantity,
+        'total': total.toStringAsFixed(2),
+        'address': addressController.text.trim(),
+        'instructions': instructionsController.text.trim(),
+        'status': 'Pending',
+        'date': makeDate(),
+        'image': 'assets/images/club_prime.png',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        isSaving = false;
+      });
+      showMessage('Could not place the order. $error');
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      isSaving = false;
+    });
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentPage(quantity: quantity),
+      ),
+    );
+  }
 
   final int pricePerSquareFoot = 145;
   final int sheetArea = 32;
@@ -35,9 +112,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: ColorResources.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: ColorResources.border),
       ),
       child: child,
     );
@@ -54,7 +131,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
               style: TextStyle(
                 fontSize: bold ? 18 : 14,
                 fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-                color: AppColors.text,
+                color: ColorResources.text,
               ),
             ),
           ),
@@ -64,7 +141,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
             style: TextStyle(
               fontSize: bold ? 18 : 14,
               fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-              color: AppColors.primary,
+              color: ColorResources.primary,
             ),
           ),
         ],
@@ -98,7 +175,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 'Demo order — sample product and address',
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.lightText,
+                  color: ColorResources.lightText,
                 ),
               ),
 
@@ -113,7 +190,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Image.asset(
-                            'assets/images/wishlist_product.png',
+                            'assets/images/club_prime.png',
                             width: 80,
                             height: 90,
                             fit: BoxFit.cover,
@@ -129,18 +206,18 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
+                                  color: ColorResources.primary,
                                 ),
                               ),
                               SizedBox(height: 8),
                               Text(
                                 'CenturyPly • 19 mm • 8 × 4 ft',
-                                style: TextStyle(color: AppColors.text),
+                                style: TextStyle(color: ColorResources.text),
                               ),
                               SizedBox(height: 8),
                               Text(
                                 '₹145 / sq.ft',
-                                style: TextStyle(color: AppColors.primary),
+                                style: TextStyle(color: ColorResources.primary),
                               ),
                             ],
                           ),
@@ -149,7 +226,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     ),
 
                     SizedBox(height: 16),
-                    Divider(color: AppColors.border),
+                    Divider(color: ColorResources.border),
 
                     Row(
                       children: [
@@ -158,7 +235,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                             'Quantity',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: AppColors.heading,
+                              color: ColorResources.heading,
                             ),
                           ),
                         ),
@@ -172,13 +249,13 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                                 }
                               : null,
                           icon: Icon(Icons.remove_circle_outline),
-                          color: AppColors.primary,
+                          color: ColorResources.primary,
                         ),
                         Text(
                           '$quantity',
                           style: TextStyle(
                             fontSize: 18,
-                            color: AppColors.primary,
+                            color: ColorResources.primary,
                           ),
                         ),
                         IconButton(
@@ -191,7 +268,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                                 }
                               : null,
                           icon: Icon(Icons.add_circle_outline),
-                          color: AppColors.primary,
+                          color: ColorResources.primary,
                         ),
                       ],
                     ),
@@ -213,7 +290,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
+                              color: ColorResources.primary,
                             ),
                           ),
                         ),
@@ -230,7 +307,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                           },
                           child: Text(
                             editAddress ? 'Save' : 'Edit Address',
-                            style: TextStyle(color: AppColors.primary),
+                            style: TextStyle(color: ColorResources.primary),
                           ),
                         ),
                       ],
@@ -257,7 +334,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                         addressController.text,
                         style: TextStyle(
                           height: 1.6,
-                          color: AppColors.text,
+                          color: ColorResources.text,
                         ),
                       ),
                   ],
@@ -270,7 +347,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 'Delivery Instructions',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+                  color: ColorResources.primary,
                 ),
               ),
 
@@ -282,13 +359,13 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 decoration: InputDecoration(
                   hintText: 'Add delivery instructions (optional)',
                   filled: true,
-                  fillColor: AppColors.white,
+                  fillColor: ColorResources.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(color: ColorResources.border),
                   ),
                 ),
               ),
@@ -304,7 +381,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+                        color: ColorResources.primary,
                       ),
                     ),
                     SizedBox(height: 12),
@@ -313,7 +390,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                       '₹${sheetPrice.toStringAsFixed(2)}',
                     ),
                     priceRow('Quantity', '$quantity'),
-                    Divider(color: AppColors.border),
+                    Divider(color: ColorResources.border),
                     priceRow(
                       'Total Amount',
                       '₹${total.toStringAsFixed(2)}',
@@ -326,7 +403,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
               SizedBox(height: 28),
 
               ElevatedButton(
-                onPressed: () {
+                onPressed: isSaving ? null : () {
                   if (!_formKey.currentState!.validate()) return;
 
                   if (addressController.text.trim().isEmpty) {
@@ -334,13 +411,11 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     return;
                   }
 
-                  showMessage(
-                    'Total: ₹$total. Payment page will be connected later.',
-                  );
+                  saveOrder();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.white,
+                  backgroundColor: ColorResources.primary,
+                  foregroundColor: ColorResources.white,
                   padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -360,7 +435,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 },
                 child: Text(
                   'Cancel Order',
-                  style: TextStyle(color: AppColors.text),
+                  style: TextStyle(color: ColorResources.text),
                 ),
               ),
             ],

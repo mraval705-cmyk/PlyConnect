@@ -1,6 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'admin/admin_login.dart';
+import 'guest/home.dart';
 import 'signup.dart';
-import 'resources/app_colors.dart';
+import 'resources/color_resources.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -32,9 +35,74 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void login() {
-    if (_formKey.currentState!.validate()) {
-      showMessage('Details valid. Database login is not connected yet.');
+  void openAdminLogin() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AdminLoginPage(),
+      ),
+    );
+  }
+
+  bool isLoading = false;
+
+  // Signs the user in with Firebase Authentication.
+  Future<void> login() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final entered = emailController.text.trim();
+
+    // Firebase needs a real email address. If the user typed a mobile number
+    // we cannot use it for Firebase login, so we tell them clearly.
+    if (!entered.contains('@')) {
+      showMessage(
+        'Please enter your email address to log in. '
+        'Mobile number login is not available yet.',
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: entered,
+        password: passwordController.text,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const GuestHomePage(),
+        ),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (error) {
+      if (error.code == 'wrong-password' ||
+          error.code == 'user-not-found' ||
+          error.code == 'invalid-credential') {
+        showMessage('Wrong email or password.');
+      } else if (error.code == 'user-disabled') {
+        showMessage('This account has been disabled.');
+      } else if (error.code == 'too-many-requests') {
+        showMessage('Too many attempts. Please try again later.');
+      } else {
+        showMessage('Could not log in. ${error.message}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -48,13 +116,13 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ColorResources.background,
 
       appBar: AppBar(
         title: Text('Login'),
         centerTitle: true,
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.primary,
+        backgroundColor: ColorResources.background,
+        foregroundColor: ColorResources.primary,
         elevation: 0,
       ),
 
@@ -74,7 +142,7 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.heading,
+                    color: ColorResources.heading,
                   ),
                 ),
 
@@ -86,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
-                    color: AppColors.text,
+                    color: ColorResources.text,
                     height: 1.5,
                   ),
                 ),
@@ -101,7 +169,7 @@ class _LoginPageState extends State<LoginPage> {
                         decoration: BoxDecoration(
                           border: Border(
                             bottom: BorderSide(
-                              color: AppColors.primary,
+                              color: ColorResources.primary,
                               width: 2,
                             ),
                           ),
@@ -112,7 +180,7 @@ class _LoginPageState extends State<LoginPage> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                            color: ColorResources.primary,
                           ),
                         ),
                       ),
@@ -125,7 +193,7 @@ class _LoginPageState extends State<LoginPage> {
                           'Sign Up',
                           style: TextStyle(
                             fontSize: 16,
-                            color: AppColors.text,
+                            color: ColorResources.text,
                           ),
                         ),
                       ),
@@ -139,7 +207,7 @@ class _LoginPageState extends State<LoginPage> {
                   'Email or Mobile Number',
                   style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.text,
+                    color: ColorResources.text,
                   ),
                 ),
 
@@ -156,13 +224,13 @@ class _LoginPageState extends State<LoginPage> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: AppColors.border,
+                        color: ColorResources.border,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: AppColors.primary,
+                        color: ColorResources.primary,
                       ),
                     ),
                   ),
@@ -195,7 +263,7 @@ class _LoginPageState extends State<LoginPage> {
                   'Password',
                   style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.text,
+                    color: ColorResources.text,
                   ),
                 ),
 
@@ -212,13 +280,13 @@ class _LoginPageState extends State<LoginPage> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: AppColors.border,
+                        color: ColorResources.border,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: AppColors.primary,
+                        color: ColorResources.primary,
                       ),
                     ),
                     suffixIcon: IconButton(
@@ -226,7 +294,7 @@ class _LoginPageState extends State<LoginPage> {
                         hidePassword
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: AppColors.text,
+                        color: ColorResources.text,
                       ),
                       onPressed: () {
                         setState(() {
@@ -252,7 +320,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: Text(
                       'Forgot Password?',
                       style: TextStyle(
-                        color: AppColors.primary,
+                        color: ColorResources.primary,
                       ),
                     ),
                   ),
@@ -263,18 +331,27 @@ class _LoginPageState extends State<LoginPage> {
                 SizedBox(
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: login,
+                    onPressed: isLoading ? null : login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.button,
-                      foregroundColor: AppColors.buttonText,
+                      backgroundColor: ColorResources.button,
+                      foregroundColor: ColorResources.buttonText,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: Text(
-                      'Login',
-                      style: TextStyle(fontSize: 20),
-                    ),
+                    child: isLoading
+                        ? SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              color: ColorResources.buttonText,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            'Login',
+                            style: TextStyle(fontSize: 20),
+                          ),
                   ),
                 ),
 
@@ -287,7 +364,7 @@ class _LoginPageState extends State<LoginPage> {
                     Text(
                       "Don't have an account?",
                       style: TextStyle(
-                        color: AppColors.text,
+                        color: ColorResources.text,
                       ),
                     ),
                     TextButton(
@@ -296,7 +373,7 @@ class _LoginPageState extends State<LoginPage> {
                         'Sign Up',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
+                          color: ColorResources.primary,
                         ),
                       ),
                     ),
@@ -304,13 +381,11 @@ class _LoginPageState extends State<LoginPage> {
                 ),
 
                 TextButton(
-                  onPressed: () {
-                    showMessage('Admin login page is not connected yet.');
-                  },
+                  onPressed: openAdminLogin,
                   child: Text(
                     'Login as Admin →',
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: ColorResources.primary,
                     ),
                   ),
                 ),

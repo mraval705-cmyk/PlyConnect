@@ -2,19 +2,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../resources/color_resources.dart';
 
-class CategoryForm extends StatefulWidget {
+class BrandForm extends StatefulWidget {
   final bool isEditing;
 
-  const CategoryForm({
+  const BrandForm({
     super.key,
     this.isEditing = false,
   });
 
   @override
-  State<CategoryForm> createState() => _CategoryFormState();
+  State<BrandForm> createState() => _BrandFormState();
 }
 
-class _CategoryFormState extends State<CategoryForm> {
+class _BrandFormState extends State<BrandForm> {
   final _formKey = GlobalKey<FormState>();
 
   final nameController = TextEditingController();
@@ -25,11 +25,10 @@ class _CategoryFormState extends State<CategoryForm> {
     super.initState();
 
     if (widget.isEditing) {
-      nameController.text = 'BWP Grade';
+      nameController.text = 'Greenply';
       descriptionController.text =
-          'Boiling Water Proof marine grade plywood, '
-          'ideal for high-moisture areas like kitchens '
-          'and bathrooms.';
+          'Premium quality plywood and veneers with '
+          'eco-friendly certifications.';
     }
   }
 
@@ -60,8 +59,8 @@ class _CategoryFormState extends State<CategoryForm> {
 
   bool isLoading = false;
 
-  // Writes the category into the "categories" collection in Firestore.
-  Future<void> saveCategory() async {
+  // Writes the brand into the "brands" collection in Firestore.
+  Future<void> saveBrand() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -78,12 +77,12 @@ class _CategoryFormState extends State<CategoryForm> {
 
       if (widget.isEditing) {
         await FirebaseFirestore.instance
-            .collection('categories')
-            .doc('C001')
+            .collection('brands')
+            .doc('B001')
             .update(data);
       } else {
         await FirebaseFirestore.instance
-            .collection('categories')
+            .collection('brands')
             .add(data);
       }
 
@@ -91,7 +90,7 @@ class _CategoryFormState extends State<CategoryForm> {
         return;
       }
 
-      showMessage(widget.isEditing ? 'Category updated.' : 'Category saved.');
+      showMessage(widget.isEditing ? 'Brand updated.' : 'Brand saved.');
 
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
@@ -100,7 +99,7 @@ class _CategoryFormState extends State<CategoryForm> {
       });
     } catch (error) {
       if (mounted) {
-        showMessage('Could not save the category. $error');
+        showMessage('Could not save the brand. $error');
       }
     } finally {
       if (mounted) {
@@ -124,7 +123,7 @@ class _CategoryFormState extends State<CategoryForm> {
       backgroundColor: ColorResources.background,
       appBar: AppBar(
         title: Text(
-          widget.isEditing ? 'Edit Category' : 'Add Category',
+          widget.isEditing ? 'Edit Brand' : 'Add Brand',
         ),
         backgroundColor: ColorResources.background,
         foregroundColor: ColorResources.primary,
@@ -143,7 +142,7 @@ class _CategoryFormState extends State<CategoryForm> {
                   borderRadius: BorderRadius.circular(12),
                   child: Image.asset(
                     widget.isEditing
-                        ? 'assets/images/commercial.png'
+                        ? 'assets/images/green_gold.png'
                         : 'assets/images/home_banner.png',
                     height: 190,
                     fit: BoxFit.cover,
@@ -153,7 +152,7 @@ class _CategoryFormState extends State<CategoryForm> {
                 SizedBox(height: 28),
 
                 Text(
-                  'CATEGORY NAME',
+                  'BRAND NAME',
                   style: TextStyle(
                     fontSize: 12,
                     color: ColorResources.text,
@@ -166,11 +165,11 @@ class _CategoryFormState extends State<CategoryForm> {
                   controller: nameController,
                   textCapitalization: TextCapitalization.words,
                   decoration: fieldDesign(
-                    'e.g., Marine Grade Plywood',
+                    'e.g., Greenply',
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter category name';
+                      return 'Please enter brand name';
                     }
                     return null;
                   },
@@ -193,7 +192,7 @@ class _CategoryFormState extends State<CategoryForm> {
                   minLines: 3,
                   maxLines: 5,
                   decoration: fieldDesign(
-                    'Describe this category and its uses...',
+                    'Describe this brand and its products...',
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -207,7 +206,7 @@ class _CategoryFormState extends State<CategoryForm> {
                   SizedBox(height: 24),
 
                   Text(
-                    'CATEGORY THUMBNAIL',
+                    'BRAND LOGO',
                     style: TextStyle(
                       fontSize: 12,
                       color: ColorResources.text,
@@ -232,7 +231,7 @@ class _CategoryFormState extends State<CategoryForm> {
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'category_edit.png',
+                            'brand_logo.png',
                             style: TextStyle(color: ColorResources.text),
                           ),
                         ),
@@ -255,7 +254,7 @@ class _CategoryFormState extends State<CategoryForm> {
                 SizedBox(height: 32),
 
                 ElevatedButton(
-                  onPressed: isLoading ? null : saveCategory,
+                  onPressed: isLoading ? null : saveBrand,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ColorResources.button,
                     foregroundColor: ColorResources.white,
@@ -274,9 +273,7 @@ class _CategoryFormState extends State<CategoryForm> {
                           ),
                         )
                       : Text(
-                          widget.isEditing
-                              ? 'Update Category'
-                              : 'Save Category',
+                          widget.isEditing ? 'Update Brand' : 'Save Brand',
                         ),
                 ),
 
@@ -284,9 +281,7 @@ class _CategoryFormState extends State<CategoryForm> {
 
                 OutlinedButton(
                   onPressed: () {
-                    showMessage(
-                      'Cancel navigation will be connected later.',
-                    );
+                    Navigator.pop(context);
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: ColorResources.primary,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../components/guest_page.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
+import 'compare_products.dart';
 
 class SelectProductPage extends StatefulWidget {
   const SelectProductPage({super.key});
@@ -61,16 +62,16 @@ class _SelectProductPageState extends State<SelectProductPage> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        border: Border.all(color: AppColors.border),
+        color: ColorResources.white,
+        border: Border.all(color: ColorResources.border),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
           isExpanded: true,
-          dropdownColor: AppColors.background,
-          style: TextStyle(color: AppColors.primary),
+          dropdownColor: ColorResources.background,
+          style: TextStyle(color: ColorResources.primary),
           items: options.map((option) {
             return DropdownMenuItem(
               value: option,
@@ -106,7 +107,7 @@ class _SelectProductPageState extends State<SelectProductPage> {
             Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.button,
+                color: ColorResources.button,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -129,7 +130,7 @@ class _SelectProductPageState extends State<SelectProductPage> {
                           'SELECTED PRODUCT',
                           style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.buttonText,
+                            color: ColorResources.buttonText,
                           ),
                         ),
                         SizedBox(height: 6),
@@ -138,13 +139,13 @@ class _SelectProductPageState extends State<SelectProductPage> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.white,
+                            color: ColorResources.white,
                           ),
                         ),
                         SizedBox(height: 6),
                         Text(
                           'CenturyPly • 19mm',
-                          style: TextStyle(color: AppColors.buttonText),
+                          style: TextStyle(color: ColorResources.buttonText),
                         ),
                       ],
                     ),
@@ -158,13 +159,13 @@ class _SelectProductPageState extends State<SelectProductPage> {
             TextField(
               decoration: InputDecoration(
                 hintText: 'Search product to compare...',
-                prefixIcon: Icon(Icons.search, color: AppColors.primary),
+                prefixIcon: Icon(Icons.search, color: ColorResources.primary),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.border),
+                  borderSide: BorderSide(color: ColorResources.border),
                 ),
               ),
               onChanged: (value) {
@@ -217,7 +218,7 @@ class _SelectProductPageState extends State<SelectProductPage> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+                color: ColorResources.primary,
               ),
             ),
 
@@ -228,7 +229,7 @@ class _SelectProductPageState extends State<SelectProductPage> {
                 padding: EdgeInsets.all(20),
                 child: Text(
                   'No matching products.',
-                  style: TextStyle(color: AppColors.text),
+                  style: TextStyle(color: ColorResources.text),
                 ),
               ),
 
@@ -238,13 +239,13 @@ class _SelectProductPageState extends State<SelectProductPage> {
               return Padding(
                 padding: EdgeInsets.only(bottom: 12),
                 child: Material(
-                  color: AppColors.white,
+                  color: ColorResources.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                     side: BorderSide(
                       color: selected
-                          ? AppColors.primary
-                          : AppColors.border,
+                          ? ColorResources.primary
+                          : ColorResources.border,
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,
@@ -277,21 +278,21 @@ class _SelectProductPageState extends State<SelectProductPage> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.heading,
+                                    color: ColorResources.heading,
                                   ),
                                 ),
                                 SizedBox(height: 4),
                                 Text(
                                   '${product['brand']} • '
                                   '${product['thickness']}',
-                                  style: TextStyle(color: AppColors.text),
+                                  style: TextStyle(color: ColorResources.text),
                                 ),
                                 SizedBox(height: 6),
                                 Text(
                                   '₹${product['price']} / sq.ft',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.primary,
+                                    color: ColorResources.primary,
                                   ),
                                 ),
                               ],
@@ -301,7 +302,7 @@ class _SelectProductPageState extends State<SelectProductPage> {
                             selected
                                 ? Icons.radio_button_checked
                                 : Icons.radio_button_unchecked,
-                            color: AppColors.primary,
+                            color: ColorResources.primary,
                           ),
                         ],
                       ),
@@ -318,15 +319,17 @@ class _SelectProductPageState extends State<SelectProductPage> {
                 if (selectedProduct == null) {
                   showMessage('Please select a product first.');
                 } else {
-                  showMessage(
-                    '$selectedProduct selected. '
-                    'Comparison navigation will be connected later.',
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CompareProductsPage(),
+                    ),
                   );
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.button,
-                foregroundColor: AppColors.white,
+                backgroundColor: ColorResources.button,
+                foregroundColor: ColorResources.white,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

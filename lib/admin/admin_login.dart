@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
+import 'admin_dashboard.dart';
 
 class AdminLoginPage extends StatefulWidget {
   const AdminLoginPage({super.key});
@@ -25,26 +27,65 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     return InputDecoration(
       hintText: hint,
       filled: true,
-      fillColor: AppColors.white,
+      fillColor: ColorResources.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: ColorResources.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: AppColors.primary),
+        borderSide: BorderSide(color: ColorResources.primary),
       ),
     );
   }
 
-  void login() {
-    if (_formKey.currentState!.validate()) {
-      showMessage(
-        'Form valid. Admin authentication is not connected yet.',
+  bool isLoading = false;
+
+  // Admin logs in with the same Firebase Authentication as the customer.
+  // Only the accounts that already exist in Firebase can sign in here.
+  Future<void> login() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text,
       );
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const AdminDashboardPage(),
+        ),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (error) {
+      if (error.code == 'wrong-password' ||
+          error.code == 'user-not-found' ||
+          error.code == 'invalid-credential') {
+        showMessage('Wrong admin email or password.');
+      } else {
+        showMessage('Could not log in. ${error.message}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -58,12 +99,12 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ColorResources.background,
       appBar: AppBar(
         title: Text('Admin Login'),
         centerTitle: true,
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.primary,
+        backgroundColor: ColorResources.background,
+        foregroundColor: ColorResources.primary,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -92,7 +133,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: ColorResources.primary,
                   ),
                 ),
 
@@ -100,7 +141,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
                 Text(
                   'Email',
-                  style: TextStyle(color: AppColors.text),
+                  style: TextStyle(color: ColorResources.text),
                 ),
 
                 SizedBox(height: 8),
@@ -127,7 +168,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
                 Text(
                   'Password',
-                  style: TextStyle(color: AppColors.text),
+                  style: TextStyle(color: ColorResources.text),
                 ),
 
                 SizedBox(height: 8),
@@ -146,7 +187,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                         hidePassword
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: AppColors.primary,
+                        color: ColorResources.primary,
                       ),
                       onPressed: () {
                         setState(() {
@@ -166,19 +207,28 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                 SizedBox(height: 24),
 
                 ElevatedButton(
-                  onPressed: login,
+                  onPressed: isLoading ? null : login,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.button,
-                    foregroundColor: AppColors.buttonText,
+                    backgroundColor: ColorResources.button,
+                    foregroundColor: ColorResources.buttonText,
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: Text(
-                    'Login',
-                    style: TextStyle(fontSize: 20),
-                  ),
+                  child: isLoading
+                      ? SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: ColorResources.buttonText,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          'Login',
+                          style: TextStyle(fontSize: 20),
+                        ),
                 ),
 
                 SizedBox(height: 12),
@@ -193,7 +243,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                     },
                     child: Text(
                       'Change Password',
-                      style: TextStyle(color: AppColors.primary),
+                      style: TextStyle(color: ColorResources.primary),
                     ),
                   ),
                 ),
@@ -203,8 +253,8 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                 Container(
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.white,
-                    border: Border.all(color: AppColors.border),
+                    color: ColorResources.white,
+                    border: Border.all(color: ColorResources.border),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -213,7 +263,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       height: 1.6,
-                      color: AppColors.text,
+                      color: ColorResources.text,
                     ),
                   ),
                 ),

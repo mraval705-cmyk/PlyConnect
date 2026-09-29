@@ -1,6 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../login.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
+import '../user/my_orders.dart';
+import '../user/my_profile.dart';
+import '../user/wishlist.dart';
+import 'browse_products.dart';
 import 'product_details.dart';
 
 class GuestHomePage extends StatefulWidget {
@@ -37,24 +42,14 @@ class _GuestHomePageState extends State<GuestHomePage> {
     'DURACORE',
   ];
 
-  final products = [
-    {
-      'name': '18mm Commercial Ply',
-      'brand': 'CENTURYPLY',
-      'category': 'Commercial',
-      'thickness': '18mm',
-      'price': '₹85 / sq.ft',
-      'image': 'assets/images/commercial.png',
-    },
-    {
-      'name': '12mm BWP Marine Ply',
-      'brand': 'GREENPLY',
-      'category': 'Marine',
-      'thickness': '12mm',
-      'price': '₹112 / sq.ft',
-      'image': 'assets/images/marine.png',
-    },
-  ];
+  // The category chips are still a fixed list, because they describe the
+  // shop sections. The products themselves now come from Firestore.
+  String showPrice(dynamic value) {
+    if (value is num) {
+      return '₹${value.toStringAsFixed(0)} / sq.ft';
+    }
+    return '₹$value / sq.ft';
+  }
 
   void openLogin() {
     Navigator.push(
@@ -76,6 +71,15 @@ class _GuestHomePageState extends State<GuestHomePage> {
     );
   }
 
+  void openBrowse() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BrowseProductsPage(),
+      ),
+    );
+  }
+
   void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -88,7 +92,7 @@ class _GuestHomePageState extends State<GuestHomePage> {
       style: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.bold,
-        color: AppColors.heading,
+        color: ColorResources.heading,
       ),
     );
   }
@@ -98,9 +102,9 @@ class _GuestHomePageState extends State<GuestHomePage> {
       width: width,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: ColorResources.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: ColorResources.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -119,7 +123,7 @@ class _GuestHomePageState extends State<GuestHomePage> {
                   product['brand']!,
                   style: TextStyle(
                     fontSize: 10,
-                    color: AppColors.text,
+                    color: ColorResources.text,
                   ),
                 ),
                 SizedBox(height: 8),
@@ -128,7 +132,7 @@ class _GuestHomePageState extends State<GuestHomePage> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.heading,
+                    color: ColorResources.heading,
                   ),
                 ),
                 SizedBox(height: 8),
@@ -136,7 +140,7 @@ class _GuestHomePageState extends State<GuestHomePage> {
                   product['price']!,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: ColorResources.primary,
                   ),
                 ),
                 SizedBox(height: 12),
@@ -147,8 +151,8 @@ class _GuestHomePageState extends State<GuestHomePage> {
                       openDetails(product);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.white,
+                      backgroundColor: ColorResources.primary,
+                      foregroundColor: ColorResources.white,
                       padding: EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 10,
@@ -168,27 +172,31 @@ class _GuestHomePageState extends State<GuestHomePage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final filteredProducts = products.where((product) {
-      final matchesSearch =
-          product['name']!.toLowerCase().contains(search) ||
-          product['brand']!.toLowerCase().contains(search);
+  // Kept for the same filtering as the design, now applied to Firestore docs.
+  List<QueryDocumentSnapshot> filterProducts(List<QueryDocumentSnapshot> docs) {
+    return docs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      final name = '${data['name'] ?? ''}'.toLowerCase();
+      final brand = '${data['brand'] ?? ''}'.toLowerCase();
+      final category = '${data['category'] ?? ''}';
 
+      final matchesSearch = name.contains(search) || brand.contains(search);
       final matchesCategory =
-          selectedCategory == 'All' ||
-          product['category'] == selectedCategory;
+          selectedCategory == 'All' || category == selectedCategory;
 
       return matchesSearch && matchesCategory;
     }).toList();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ColorResources.background,
 
       appBar: AppBar(
         title: Text('PlyConnect'),
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.primary,
+        backgroundColor: ColorResources.background,
+        foregroundColor: ColorResources.primary,
         actions: [
           IconButton(
             tooltip: 'Notifications',
@@ -198,15 +206,22 @@ class _GuestHomePageState extends State<GuestHomePage> {
             },
           ),
           IconButton(
-            tooltip: 'Login',
+            tooltip: 'My Profile',
             icon: Icon(Icons.person_outline),
-            onPressed: openLogin,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MyProfilePage(),
+                ),
+              );
+            },
           ),
         ],
       ),
 
       drawer: Drawer(
-        backgroundColor: AppColors.background,
+        backgroundColor: ColorResources.background,
         child: SafeArea(
           child: ListView(
             padding: EdgeInsets.zero,
@@ -227,7 +242,12 @@ class _GuestHomePageState extends State<GuestHomePage> {
                 title: Text('Login / Sign Up'),
                 onTap: () {
                   Navigator.pop(context);
-                  openLogin();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginPage(),
+                    ),
+                  );
                 },
               ),
             ],
@@ -245,14 +265,14 @@ class _GuestHomePageState extends State<GuestHomePage> {
                 hintText: 'Search plywood products...',
                 prefixIcon: Icon(
                   Icons.search,
-                  color: AppColors.primary,
+                  color: ColorResources.primary,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.border),
+                  borderSide: BorderSide(color: ColorResources.border),
                 ),
               ),
               onChanged: (value) {
@@ -276,7 +296,7 @@ class _GuestHomePageState extends State<GuestHomePage> {
                   },
                   child: Text(
                     'View All',
-                    style: TextStyle(color: AppColors.primary),
+                    style: TextStyle(color: ColorResources.primary),
                   ),
                 ),
               ],
@@ -306,15 +326,15 @@ class _GuestHomePageState extends State<GuestHomePage> {
                               height: 64,
                               decoration: BoxDecoration(
                                 color: selected
-                                    ? AppColors.primary
-                                    : AppColors.border,
+                                    ? ColorResources.primary
+                                    : ColorResources.border,
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Icon(
                                 categoryIcons[index],
                                 color: selected
-                                    ? AppColors.white
-                                    : AppColors.primary,
+                                    ? ColorResources.white
+                                    : ColorResources.primary,
                               ),
                             ),
                             SizedBox(height: 8),
@@ -322,7 +342,7 @@ class _GuestHomePageState extends State<GuestHomePage> {
                               categories[index],
                               style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.text,
+                                color: ColorResources.text,
                               ),
                             ),
                           ],
@@ -351,8 +371,8 @@ class _GuestHomePageState extends State<GuestHomePage> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.primary,
-                      AppColors.primary.withAlpha(70),
+                      ColorResources.primary,
+                      ColorResources.primary.withAlpha(70),
                     ],
                   ),
                 ),
@@ -363,7 +383,7 @@ class _GuestHomePageState extends State<GuestHomePage> {
                       'NEW ARRIVAL',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.buttonText,
+                        color: ColorResources.buttonText,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -373,24 +393,20 @@ class _GuestHomePageState extends State<GuestHomePage> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.white,
+                        color: ColorResources.white,
                       ),
                     ),
                     SizedBox(height: 8),
                     Text(
                       'Starting from ₹95 / sq.ft',
-                      style: TextStyle(color: AppColors.white),
+                      style: TextStyle(color: ColorResources.white),
                     ),
                     SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: () {
-                        showMessage(
-                          'Browse Products page is not connected yet.',
-                        );
-                      },
+                      onPressed: openBrowse,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.white,
-                        foregroundColor: AppColors.primary,
+                        backgroundColor: ColorResources.white,
+                        foregroundColor: ColorResources.primary,
                       ),
                       child: Text('Explore Now'),
                     ),
@@ -414,15 +430,15 @@ class _GuestHomePageState extends State<GuestHomePage> {
                       vertical: 18,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.white,
-                      border: Border.all(color: AppColors.border),
+                      color: ColorResources.white,
+                      border: Border.all(color: ColorResources.border),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
                       brand,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+                        color: ColorResources.primary,
                       ),
                     ),
                   );
@@ -434,27 +450,63 @@ class _GuestHomePageState extends State<GuestHomePage> {
             heading('Popular Products'),
             SizedBox(height: 16),
 
-            if (filteredProducts.isEmpty)
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Text(
-                  'No matching products.',
-                  style: TextStyle(color: AppColors.text),
-                ),
-              ),
+            // Products are read live from Firestore.
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('products')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: CircularProgressIndicator(
+                        color: ColorResources.primary,
+                      ),
+                    ),
+                  );
+                }
 
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final width = constraints.maxWidth < 320
-                    ? constraints.maxWidth
-                    : (constraints.maxWidth - 12) / 2;
+                if (snapshot.hasError) {
+                  return Text(
+                    'Could not load products.',
+                    style: TextStyle(color: ColorResources.text),
+                  );
+                }
 
-                return Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: filteredProducts.map((product) {
-                    return productCard(product, width);
-                  }).toList(),
+                final docs = snapshot.data?.docs ?? [];
+                final visible = filterProducts(docs);
+
+                if (visible.isEmpty) {
+                  return SizedBox.shrink();
+                }
+
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth < 320
+                        ? constraints.maxWidth
+                        : (constraints.maxWidth - 12) / 2;
+
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: visible.map((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+
+                        return productCard(
+                          {
+                            'name': '${data['name'] ?? ''}',
+                            'brand': '${data['brand'] ?? ''}',
+                            'category': '${data['category'] ?? ''}',
+                            'thickness': '${data['thickness'] ?? ''}',
+                            'price': showPrice(data['price']),
+                            'image': '${data['image'] ?? ''}',
+                          },
+                          width,
+                        );
+                      }).toList(),
+                    );
+                  },
                 );
               },
             ),
@@ -467,16 +519,35 @@ class _GuestHomePageState extends State<GuestHomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.background,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.text,
+        backgroundColor: ColorResources.background,
+        selectedItemColor: ColorResources.primary,
+        unselectedItemColor: ColorResources.text,
         selectedFontSize: 11,
         unselectedFontSize: 11,
         onTap: (index) {
           if (index == 1) {
-            showMessage('Use the category filters above.');
-          } else if (index >= 2) {
-            openLogin();
+            openBrowse();
+          } else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const WishlistPage(),
+              ),
+            );
+          } else if (index == 3) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MyOrdersPage(),
+              ),
+            );
+          } else if (index == 4) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MyProfilePage(),
+              ),
+            );
           }
         },
         items: [

@@ -1,114 +1,27 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../resources/color_resources.dart';
 
-class EditProfilePage extends StatefulWidget {
-  const EditProfilePage({super.key});
+class EditAdminProfilePage extends StatefulWidget {
+  const EditAdminProfilePage({super.key});
 
   @override
-  State<EditProfilePage> createState() => _EditProfilePageState();
+  State<EditAdminProfilePage> createState() => _EditAdminProfilePageState();
 }
 
-class _EditProfilePageState extends State<EditProfilePage> {
+class _EditAdminProfilePageState extends State<EditAdminProfilePage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Empty by default, then filled with the signed in user's own details.
-  final nameController = TextEditingController();
-  final emailController = TextEditingController();
-  final mobileController = TextEditingController();
+  final nameController = TextEditingController(
+    text: 'Rajesh Kumar',
+  );
 
-  bool isLoading = true;
+  final emailController = TextEditingController(
+    text: 'admin@plyconnect.com',
+  );
 
-  @override
-  void initState() {
-    super.initState();
-    loadDetails();
-  }
-
-  // A real form starts with the values that are already saved for the user,
-  // never with sample values.
-  Future<void> loadDetails() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-
-    if (currentUser == null) {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-      return;
-    }
-
-    nameController.text = currentUser.displayName ?? '';
-    emailController.text = currentUser.email ?? '';
-
-    try {
-      final document = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .get();
-
-      final data = document.data();
-
-      if (data != null) {
-        nameController.text = '${data['name'] ?? nameController.text}';
-        mobileController.text = '${data['mobile'] ?? ''}';
-      }
-    } catch (error) {
-      // Keep whatever we already have.
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      isLoading = false;
-    });
-  }
-
-  // Saves the changed details back to Firestore.
-  Future<void> saveProfile() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    final currentUser = FirebaseAuth.instance.currentUser;
-
-    if (currentUser == null) {
-      showMessage('Please login before editing your profile.');
-      return;
-    }
-
-    try {
-      // set with merge:true works even when this user has no document yet,
-      // which is the case for accounts made directly in the Firebase console.
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .set({
-        'name': nameController.text.trim(),
-        'mobile': mobileController.text.trim(),
-        'email': currentUser.email ?? '',
-      }, SetOptions(merge: true));
-    } catch (error) {
-      showMessage('Could not save your details. $error');
-      return;
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    showMessage('Profile updated.');
-
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        Navigator.pop(context);
-      }
-    });
-  }
+  final mobileController = TextEditingController(
+    text: '9876543210',
+  );
 
   void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -136,6 +49,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
+  void saveProfile() {
+    if (_formKey.currentState!.validate()) {
+      showMessage(
+        'Details valid. Profile saving is not connected yet.',
+      );
+    }
+  }
+
   @override
   void dispose() {
     nameController.dispose();
@@ -149,7 +70,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Scaffold(
       backgroundColor: ColorResources.background,
       appBar: AppBar(
-        title: Text('Edit User Profile'),
+        title: Text('Edit Admin Profile'),
         backgroundColor: ColorResources.background,
         foregroundColor: ColorResources.primary,
       ),
@@ -163,38 +84,49 @@ class _EditProfilePageState extends State<EditProfilePage> {
               children: [
                 SizedBox(height: 12),
 
-                // No photo is shown here, because the app does not ask for a
-                // profile picture yet. The first letter is shown instead.
                 Center(
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: ColorResources.background,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: ColorResources.border,
-                        width: 2,
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.asset(
+                          'assets/images/user_profile.png',
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      nameController.text.isEmpty
-                          ? 'P'
-                          : nameController.text[0].toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: ColorResources.primary,
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: ColorResources.button,
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            tooltip: 'Change photo',
+                            onPressed: () {
+                              showMessage(
+                                'Photo selection will be connected later.',
+                              );
+                            },
+                            icon: Icon(
+                              Icons.camera_alt_outlined,
+                              color: ColorResources.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
 
                 SizedBox(height: 16),
 
                 Text(
-                  'Edit your personal information',
+                  'Edit shop owner information',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
@@ -268,7 +200,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 SizedBox(height: 40),
 
                 ElevatedButton(
-                  onPressed: isLoading ? null : saveProfile,
+                  onPressed: saveProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ColorResources.button,
                     foregroundColor: ColorResources.white,

@@ -1,5 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
 
 class ProductForm extends StatefulWidget {
   final bool isEditing;
@@ -83,17 +84,17 @@ class _ProductFormState extends State<ProductForm> {
     return InputDecoration(
       labelText: label,
       filled: true,
-      fillColor: AppColors.white,
+      fillColor: ColorResources.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: ColorResources.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: AppColors.primary),
+        borderSide: BorderSide(color: ColorResources.primary),
       ),
     );
   }
@@ -108,7 +109,7 @@ class _ProductFormState extends State<ProductForm> {
       initialValue: selected,
       isExpanded: true,
       decoration: fieldDesign(label),
-      dropdownColor: AppColors.white,
+      dropdownColor: ColorResources.white,
       items: options.map((option) {
         return DropdownMenuItem<String>(
           value: option,
@@ -125,12 +126,61 @@ class _ProductFormState extends State<ProductForm> {
     );
   }
 
-  void saveProduct() {
-    if (_formKey.currentState!.validate()) {
-      showMessage(
-        'Product details valid. Image upload and database '
-        'saving are not connected yet.',
-      );
+  bool isLoading = false;
+
+  // Writes the product into the "products" collection in Firestore.
+  Future<void> saveProduct() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final data = <String, dynamic>{
+        'name': nameController.text.trim(),
+        'brand': brand,
+        'category': category,
+        'thickness': thickness,
+        'sheetSize': sheetSize,
+        'price': double.parse(priceController.text.trim()),
+        'description': descriptionController.text.trim(),
+      };
+
+      if (widget.isEditing) {
+        await FirebaseFirestore.instance
+            .collection('products')
+            .doc('P001')
+            .update(data);
+      } else {
+        await FirebaseFirestore.instance
+            .collection('products')
+            .add(data);
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      showMessage(widget.isEditing ? 'Product updated.' : 'Product saved.');
+
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      });
+    } catch (error) {
+      if (mounted) {
+        showMessage('Could not save the product. $error');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -145,13 +195,13 @@ class _ProductFormState extends State<ProductForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ColorResources.background,
       appBar: AppBar(
         title: Text(
           widget.isEditing ? 'Edit Product' : 'Add Product',
         ),
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.primary,
+        backgroundColor: ColorResources.background,
+        foregroundColor: ColorResources.primary,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -165,7 +215,7 @@ class _ProductFormState extends State<ProductForm> {
                   widget.isEditing ? 'PRODUCT MEDIA' : 'PRODUCT IMAGE',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.text,
+                    color: ColorResources.text,
                   ),
                 ),
 
@@ -174,8 +224,8 @@ class _ProductFormState extends State<ProductForm> {
                 Container(
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.white,
-                    border: Border.all(color: AppColors.border),
+                    color: ColorResources.white,
+                    border: Border.all(color: ColorResources.border),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -184,7 +234,7 @@ class _ProductFormState extends State<ProductForm> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Image.asset(
-                            'assets/images/wishlist_product.png',
+                            'assets/images/club_prime.png',
                             width: 120,
                             height: 100,
                             fit: BoxFit.cover,
@@ -194,7 +244,7 @@ class _ProductFormState extends State<ProductForm> {
                         Icon(
                           Icons.add_a_photo_outlined,
                           size: 48,
-                          color: AppColors.lightText,
+                          color: ColorResources.lightText,
                         ),
 
                       SizedBox(height: 12),
@@ -203,7 +253,7 @@ class _ProductFormState extends State<ProductForm> {
                         widget.isEditing
                             ? 'Current Image'
                             : 'Upload Product Image',
-                        style: TextStyle(color: AppColors.text),
+                        style: TextStyle(color: ColorResources.text),
                       ),
 
                       SizedBox(height: 8),
@@ -216,7 +266,7 @@ class _ProductFormState extends State<ProductForm> {
                         },
                         child: Text(
                           widget.isEditing ? 'Change Image' : 'Choose File',
-                          style: TextStyle(color: AppColors.primary),
+                          style: TextStyle(color: ColorResources.primary),
                         ),
                       ),
                     ],
@@ -327,18 +377,29 @@ class _ProductFormState extends State<ProductForm> {
                 SizedBox(height: 28),
 
                 ElevatedButton(
-                  onPressed: saveProduct,
+                  onPressed: isLoading ? null : saveProduct,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.button,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: ColorResources.button,
+                    foregroundColor: ColorResources.white,
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: Text(
-                    widget.isEditing ? 'Update Product' : 'Save Product',
-                  ),
+                  child: isLoading
+                      ? SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: ColorResources.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          widget.isEditing
+                              ? 'Update Product'
+                              : 'Save Product',
+                        ),
                 ),
 
                 SizedBox(height: 12),
@@ -350,8 +411,8 @@ class _ProductFormState extends State<ProductForm> {
                     );
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: BorderSide(color: AppColors.primary),
+                    foregroundColor: ColorResources.primary,
+                    side: BorderSide(color: ColorResources.primary),
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

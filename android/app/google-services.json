@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "985346615518",
+    "project_id": "plyconnect-1ba33",
+    "storage_bucket": "plyconnect-1ba33.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:985346615518:android:0b72ae208a40a1986c7a4f",
+        "android_client_info": {
+          "package_name": "com.example.plyconnect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBr14RC64m43wfV3LDZVv2t1m6d01CSvUo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

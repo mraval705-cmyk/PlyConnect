@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../components/guest_page.dart';
-import '../resources/app_colors.dart';
+import '../guest/browse_products.dart';
+import '../resources/color_resources.dart';
+import 'my_orders.dart';
 
 class OrderSuccessPage extends StatelessWidget {
   const OrderSuccessPage({super.key});
@@ -20,7 +22,7 @@ class OrderSuccessPage extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: TextStyle(color: AppColors.text),
+              style: TextStyle(color: ColorResources.text),
             ),
           ),
           SizedBox(width: 12),
@@ -30,7 +32,7 @@ class OrderSuccessPage extends StatelessWidget {
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+                color: ColorResources.primary,
               ),
             ),
           ),
@@ -54,7 +56,7 @@ class OrderSuccessPage extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.lightText,
+                color: ColorResources.lightText,
               ),
             ),
 
@@ -63,7 +65,7 @@ class OrderSuccessPage extends StatelessWidget {
             Icon(
               Icons.check_circle,
               size: 76,
-              color: AppColors.primary,
+              color: ColorResources.primary,
             ),
 
             SizedBox(height: 20),
@@ -74,7 +76,7 @@ class OrderSuccessPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 25,
                 fontWeight: FontWeight.bold,
-                color: AppColors.heading,
+                color: ColorResources.heading,
               ),
             ),
 
@@ -87,7 +89,7 @@ class OrderSuccessPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 height: 1.5,
-                color: AppColors.text,
+                color: ColorResources.text,
               ),
             ),
 
@@ -96,15 +98,15 @@ class OrderSuccessPage extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: ColorResources.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: ColorResources.border),
               ),
               child: Column(
                 children: [
                   detailRow('ORDER ID', '#ORD-98765'),
 
-                  Divider(color: AppColors.border),
+                  Divider(color: ColorResources.border),
 
                   SizedBox(height: 12),
 
@@ -114,7 +116,7 @@ class OrderSuccessPage extends StatelessWidget {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.asset(
-                          'assets/images/wishlist_product.png',
+                          'assets/images/club_prime.png',
                           width: 70,
                           height: 70,
                           fit: BoxFit.cover,
@@ -131,13 +133,13 @@ class OrderSuccessPage extends StatelessWidget {
                               'Club Prime Plywood',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.heading,
+                                color: ColorResources.heading,
                               ),
                             ),
                             SizedBox(height: 6),
                             Text(
                               '1 Sheet',
-                              style: TextStyle(color: AppColors.text),
+                              style: TextStyle(color: ColorResources.text),
                             ),
                             SizedBox(height: 6),
                             Text(
@@ -145,7 +147,7 @@ class OrderSuccessPage extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
+                                color: ColorResources.primary,
                               ),
                             ),
                           ],
@@ -175,8 +177,8 @@ class OrderSuccessPage extends StatelessWidget {
               icon: Icon(Icons.receipt_long_outlined),
               label: Text('View Invoice'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.button,
-                foregroundColor: AppColors.white,
+                backgroundColor: ColorResources.button,
+                foregroundColor: ColorResources.white,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -188,16 +190,18 @@ class OrderSuccessPage extends StatelessWidget {
 
             OutlinedButton.icon(
               onPressed: () {
-                showMessage(
+                Navigator.push(
                   context,
-                  'My Orders will be connected later.',
+                  MaterialPageRoute(
+                    builder: (context) => MyOrdersPage(),
+                  ),
                 );
               },
               icon: Icon(Icons.local_shipping_outlined),
               label: Text('My Orders'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: BorderSide(color: AppColors.primary),
+                foregroundColor: ColorResources.primary,
+                side: BorderSide(color: ColorResources.primary),
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -209,16 +213,18 @@ class OrderSuccessPage extends StatelessWidget {
 
             TextButton(
               onPressed: () {
-                showMessage(
+                Navigator.push(
                   context,
-                  'Home will be connected later.',
+                  MaterialPageRoute(
+                    builder: (context) => BrowseProductsPage(),
+                  ),
                 );
               },
               child: Text(
                 'Continue Shopping',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+                  color: ColorResources.primary,
                 ),
               ),
             ),

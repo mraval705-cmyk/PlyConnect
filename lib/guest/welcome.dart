@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../login.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
 import 'home.dart';
 
 class WelcomePage extends StatelessWidget {
@@ -9,7 +9,7 @@ class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ColorResources.background,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -43,7 +43,7 @@ class WelcomePage extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
+                              color: ColorResources.primary,
                             ),
                           ),
                           SizedBox(height: 8),
@@ -54,7 +54,7 @@ class WelcomePage extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 16,
                               height: 1.5,
-                              color: AppColors.text,
+                              color: ColorResources.text,
                             ),
                           ),
                           SizedBox(height: 48),
@@ -76,8 +76,8 @@ class WelcomePage extends StatelessWidget {
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: AppColors.white,
+                                backgroundColor: ColorResources.primary,
+                                foregroundColor: ColorResources.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -110,9 +110,9 @@ class WelcomePage extends StatelessWidget {
                                 );
                               },
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primary,
+                                foregroundColor: ColorResources.primary,
                                 side: BorderSide(
-                                  color: AppColors.primary,
+                                  color: ColorResources.primary,
                                   width: 2,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -133,7 +133,7 @@ class WelcomePage extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.lightText,
+                              color: ColorResources.lightText,
                             ),
                           ),
 

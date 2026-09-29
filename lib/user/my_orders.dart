@@ -1,6 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../components/guest_page.dart';
-import '../resources/app_colors.dart';
+import '../login.dart';
+import '../resources/color_resources.dart';
 
 class MyOrdersPage extends StatefulWidget {
   const MyOrdersPage({super.key});
@@ -21,40 +24,75 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     'Delivered',
   ];
 
-  // Sample orders for UI practice
-  final orders = [
-    {
-      'id': '#ORD-98765',
-      'date': 'Oct 24, 2023',
-      'status': 'Delivered',
-      'name': 'Club Prime Plywood',
-      'details': 'CenturyPly • 19 mm',
-      'quantity': '1',
-      'total': '4,640.00',
-    },
-    {
-      'id': '#ORD-98766',
-      'date': 'Oct 25, 2023',
-      'status': 'Pending',
-      'name': 'Club Prime Plywood',
-      'details': 'CenturyPly • 19 mm',
-      'quantity': '2',
-      'total': '9,280.00',
-    },
-    {
-      'id': '#ORD-98767',
-      'date': 'Oct 26, 2023',
-      'status': 'Processing',
-      'name': 'Club Prime Plywood',
-      'details': 'CenturyPly • 19 mm',
-      'quantity': '3',
-      'total': '13,920.00',
-    },
-  ];
-
   void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+
+  Color statusColor(String status) {
+    if (status == 'Pending') {
+      return ColorResources.warning;
+    }
+    if (status == 'Confirmed') {
+      return ColorResources.info;
+    }
+    if (status == 'Delivered') {
+      return ColorResources.success;
+    }
+    return ColorResources.primary;
+  }
+
+  // Only the orders that belong to the signed in user are shown.
+  Stream<QuerySnapshot>? myOrdersStream() {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      return null;
+    }
+
+    return FirebaseFirestore.instance
+        .collection('orders')
+        .where('userId', isEqualTo: currentUser.uid)
+        .snapshots();
+  }
+
+  Widget loginNeeded() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 60,
+              color: ColorResources.lightText,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Please login to see your orders.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                color: ColorResources.text,
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LoginPage(),
+                  ),
+                );
+              },
+              child: Text('Login'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -63,9 +101,9 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
       child: Container(
         padding: EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: ColorResources.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: ColorResources.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,7 +112,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               title,
               style: TextStyle(
                 fontSize: 10,
-                color: AppColors.text,
+                color: ColorResources.text,
               ),
             ),
             SizedBox(height: 8),
@@ -83,7 +121,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+                color: ColorResources.primary,
               ),
             ),
           ],
@@ -92,14 +130,17 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     );
   }
 
-  Widget orderCard(Map<String, String> order) {
+  Widget orderCard(Map<String, dynamic> order) {
+    final quantity = '${order['quantity'] ?? 1}';
+    final status = '${order['status'] ?? 'Pending'}';
+
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: ColorResources.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: ColorResources.border),
       ),
       child: Column(
         children: [
@@ -110,18 +151,18 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      order['id']!,
+                      '${order['orderId'] ?? ''}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+                        color: ColorResources.primary,
                       ),
                     ),
                     SizedBox(height: 6),
                     Text(
-                      order['date']!,
+                      '${order['date'] ?? ''}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.text,
+                        color: ColorResources.text,
                       ),
                     ),
                   ],
@@ -133,16 +174,16 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.background,
+                  color: ColorResources.background,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: ColorResources.border),
                 ),
                 child: Text(
-                  order['status']!,
+                  status,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: statusColor(status),
                   ),
                 ),
               ),
@@ -150,7 +191,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
           ),
 
           SizedBox(height: 12),
-          Divider(color: AppColors.border),
+          Divider(color: ColorResources.border),
           SizedBox(height: 12),
 
           Row(
@@ -159,7 +200,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.asset(
-                  'assets/images/wishlist_product.png',
+                  order['image'] ?? 'assets/images/club_prime.png',
                   width: 80,
                   height: 90,
                   fit: BoxFit.cover,
@@ -171,30 +212,29 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      order['name']!,
+                      '${order['name'] ?? ''}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+                        color: ColorResources.primary,
                       ),
                     ),
                     SizedBox(height: 6),
                     Text(
-                      order['details']!,
-                      style: TextStyle(color: AppColors.text),
+                      '${order['brand'] ?? ''} • ${order['thickness'] ?? ''}',
+                      style: TextStyle(color: ColorResources.text),
                     ),
                     SizedBox(height: 10),
                     Text(
-                      'Qty: ${order['quantity']} '
-                      '${order['quantity'] == '1' ? 'Sheet' : 'Sheets'}',
-                      style: TextStyle(color: AppColors.text),
+                      'Qty: $quantity ${quantity == '1' ? 'Sheet' : 'Sheets'}',
+                      style: TextStyle(color: ColorResources.text),
                     ),
                     SizedBox(height: 6),
                     Text(
-                      '₹${order['total']}',
+                      '₹${order['total'] ?? 0}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+                        color: ColorResources.primary,
                       ),
                     ),
                   ],
@@ -210,11 +250,9 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    showMessage('Order Details will be connected later.');
+                    showMessage('Order details will be connected later.');
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: BorderSide(color: AppColors.primary),
                     padding: EdgeInsets.symmetric(horizontal: 6),
                   ),
                   child: Text('View Details'),
@@ -227,8 +265,6 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                     showMessage('Invoice generation is not connected yet.');
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.button,
-                    foregroundColor: AppColors.white,
                     padding: EdgeInsets.symmetric(horizontal: 6),
                   ),
                   child: Text('View Invoice'),
@@ -243,120 +279,140 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
 
   @override
   Widget build(BuildContext context) {
-    final pendingCount = orders.where(
-      (order) => order['status'] == 'Pending',
-    ).length;
-
-    final deliveredCount = orders.where(
-      (order) => order['status'] == 'Delivered',
-    ).length;
-
-    final filteredOrders = orders.where((order) {
-      final matchesSearch = order['id']!.toLowerCase().contains(search);
-
-      final matchesStatus = selectedStatus == 'All' ||
-          order['status'] == selectedStatus;
-
-      return matchesSearch && matchesStatus;
-    }).toList();
+    final stream = myOrdersStream();
 
     return GuestPage(
       title: 'My Orders',
       selectedIndex: 3,
-      body: ListView(
-        padding: EdgeInsets.all(16),
-        children: [
-          Text(
-            'Sample orders — database not connected',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.lightText,
-            ),
-          ),
-
-          SizedBox(height: 12),
-
-          Row(
-            children: [
-              countCard('TOTAL', orders.length),
-              SizedBox(width: 8),
-              countCard('PENDING', pendingCount),
-              SizedBox(width: 8),
-              countCard('DELIVERED', deliveredCount),
-            ],
-          ),
-
-          SizedBox(height: 24),
-
-          TextField(
-            decoration: InputDecoration(
-              hintText: 'Search by Order ID',
-              prefixIcon: Icon(
-                Icons.search,
-                color: AppColors.primary,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border),
-              ),
-            ),
-            onChanged: (value) {
-              setState(() {
-                search = value.trim().toLowerCase();
-              });
-            },
-          ),
-
-          SizedBox(height: 16),
-
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: statuses.map((status) {
-                final selected = selectedStatus == status;
-
-                return Padding(
-                  padding: EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(status),
-                    selected: selected,
-                    showCheckmark: false,
-                    selectedColor: AppColors.primary,
-                    backgroundColor: AppColors.white,
-                    labelStyle: TextStyle(
-                      color: selected
-                          ? AppColors.white
-                          : AppColors.primary,
+      body: stream == null
+          ? loginNeeded()
+          : StreamBuilder<QuerySnapshot>(
+              stream: stream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: ColorResources.primary,
                     ),
-                    onSelected: (value) {
-                      setState(() {
-                        selectedStatus = status;
-                      });
-                    },
-                  ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Text(
+                        'Could not load your orders.\n${snapshot.error}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: ColorResources.text),
+                      ),
+                    ),
+                  );
+                }
+
+                final docs = snapshot.data?.docs ?? [];
+
+                int countWithStatus(String status) {
+                  return docs.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    return '${data['status'] ?? ''}' == status;
+                  }).length;
+                }
+
+                final visible = docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final orderId =
+                      '${data['orderId'] ?? ''}'.toLowerCase();
+                  final status = '${data['status'] ?? ''}';
+
+                  final matchesSearch = orderId.contains(search);
+                  final matchesStatus =
+                      selectedStatus == 'All' || status == selectedStatus;
+
+                  return matchesSearch && matchesStatus;
+                }).toList();
+
+                return ListView(
+                  padding: EdgeInsets.all(16),
+                  children: [
+                    Row(
+                      children: [
+                        countCard('TOTAL', docs.length),
+                        SizedBox(width: 8),
+                        countCard('PENDING', countWithStatus('Pending')),
+                        SizedBox(width: 8),
+                        countCard('DELIVERED', countWithStatus('Delivered')),
+                      ],
+                    ),
+
+                    SizedBox(height: 24),
+
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Search by Order ID',
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: ColorResources.primary,
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          search = value.trim().toLowerCase();
+                        });
+                      },
+                    ),
+
+                    SizedBox(height: 16),
+
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: statuses.map((status) {
+                          final selected = selectedStatus == status;
+
+                          return Padding(
+                            padding: EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(status),
+                              selected: selected,
+                              showCheckmark: false,
+                              selectedColor: ColorResources.primary,
+                              backgroundColor: ColorResources.white,
+                              labelStyle: TextStyle(
+                                color: selected
+                                    ? ColorResources.white
+                                    : ColorResources.primary,
+                              ),
+                              onSelected: (value) {
+                                setState(() {
+                                  selectedStatus = status;
+                                });
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+
+                    SizedBox(height: 20),
+
+                    if (visible.isEmpty)
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40),
+                        child: Text(
+                          'No orders found.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: ColorResources.text),
+                        ),
+                      ),
+
+                    ...visible.map(
+                      (doc) => orderCard(doc.data() as Map<String, dynamic>),
+                    ),
+                  ],
                 );
-              }).toList(),
+              },
             ),
-          ),
-
-          SizedBox(height: 20),
-
-          if (filteredOrders.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Text(
-                'No matching orders.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.text),
-              ),
-            ),
-
-          ...filteredOrders.map(orderCard),
-        ],
-      ),
     );
   }
 }

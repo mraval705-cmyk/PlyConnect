@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -33,17 +33,17 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     return InputDecoration(
       labelText: label,
       filled: true,
-      fillColor: AppColors.white,
+      fillColor: ColorResources.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: ColorResources.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: AppColors.primary),
+        borderSide: BorderSide(color: ColorResources.primary),
       ),
       suffixIcon: IconButton(
         tooltip: hidden ? 'Show password' : 'Hide password',
@@ -52,7 +52,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           hidden
               ? Icons.visibility_outlined
               : Icons.visibility_off_outlined,
-          color: AppColors.primary,
+          color: ColorResources.primary,
         ),
       ),
     );
@@ -78,11 +78,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ColorResources.background,
       appBar: AppBar(
         title: Text('Change Password'),
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.primary,
+        backgroundColor: ColorResources.background,
+        foregroundColor: ColorResources.primary,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -98,7 +98,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   'ACCOUNT EMAIL',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.lightText,
+                    color: ColorResources.lightText,
                   ),
                 ),
 
@@ -107,13 +107,13 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 Container(
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.white,
+                    color: ColorResources.white,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: ColorResources.border),
                   ),
                   child: Text(
                     'arjun.sharma@email.com',
-                    style: TextStyle(color: AppColors.text),
+                    style: TextStyle(color: ColorResources.text),
                   ),
                 ),
 
@@ -209,7 +209,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   'Use at least 8 characters.',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.lightText,
+                    color: ColorResources.lightText,
                   ),
                 ),
 
@@ -218,8 +218,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 ElevatedButton(
                   onPressed: updatePassword,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.button,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: ColorResources.button,
+                    foregroundColor: ColorResources.white,
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -232,13 +232,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
                 OutlinedButton(
                   onPressed: () {
-                    showMessage(
-                      'Cancel navigation will be connected later.',
-                    );
+                    Navigator.pop(context);
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: BorderSide(color: AppColors.primary),
+                    foregroundColor: ColorResources.primary,
+                    side: BorderSide(color: ColorResources.primary),
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

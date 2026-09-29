@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'resources/app_colors.dart';
+import 'login.dart';
+import 'resources/color_resources.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -22,10 +25,10 @@ class _SignupPageState extends State<SignupPage> {
     return InputDecoration(
       hintText: hint,
       filled: true,
-      fillColor: AppColors.white,
+      fillColor: ColorResources.white,
       prefixIcon: Icon(
         icon,
-        color: AppColors.primary,
+        color: ColorResources.primary,
         size: 20,
       ),
       contentPadding: EdgeInsets.symmetric(
@@ -37,25 +40,86 @@ class _SignupPageState extends State<SignupPage> {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: ColorResources.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: AppColors.primary),
+        borderSide: BorderSide(color: ColorResources.primary),
       ),
     );
   }
 
-  void createAccount() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Details valid. Account saving is not connected yet.',
-          ),
-        ),
-      );
+  bool isLoading = false;
+
+  // Creates the account in Firebase Authentication.
+  Future<void> createAccount() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
     }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final credential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
+
+      // Save the name and mobile number in Firestore so that the Profile
+      // screen can show them later.
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(credential.user!.uid)
+          .set({
+        'name': nameController.text.trim(),
+        'mobile': mobileController.text.trim(),
+        'email': emailController.text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) {
+        return;
+      }
+
+      // The account is made, but the user must log in first. So we take
+      // them to the Login screen instead of opening the app.
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const LoginPage(),
+        ),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (error) {
+      showAuthError(error);
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  void showAuthError(FirebaseAuthException error) {
+    String message;
+
+    if (error.code == 'email-already-in-use') {
+      message = 'This email is already registered. Please log in.';
+    } else if (error.code == 'weak-password') {
+      message = 'Please use a stronger password.';
+    } else if (error.code == 'invalid-email') {
+      message = 'Please enter a valid email address.';
+    } else {
+      message = 'Could not create the account. ${error.message}';
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -71,12 +135,12 @@ class _SignupPageState extends State<SignupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ColorResources.background,
 
       appBar: AppBar(
         title: Text('Create Account'),
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.primary,
+        backgroundColor: ColorResources.background,
+        foregroundColor: ColorResources.primary,
         elevation: 0,
       ),
 
@@ -107,7 +171,7 @@ class _SignupPageState extends State<SignupPage> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: ColorResources.primary,
                   ),
                 ),
 
@@ -120,7 +184,7 @@ class _SignupPageState extends State<SignupPage> {
                   style: TextStyle(
                     fontSize: 16,
                     height: 1.5,
-                    color: AppColors.text,
+                    color: ColorResources.text,
                   ),
                 ),
 
@@ -128,7 +192,7 @@ class _SignupPageState extends State<SignupPage> {
 
                 Text(
                   'Full Name',
-                  style: TextStyle(color: AppColors.text),
+                  style: TextStyle(color: ColorResources.text),
                 ),
                 SizedBox(height: 8),
 
@@ -151,7 +215,7 @@ class _SignupPageState extends State<SignupPage> {
 
                 Text(
                   'Mobile Number',
-                  style: TextStyle(color: AppColors.text),
+                  style: TextStyle(color: ColorResources.text),
                 ),
                 SizedBox(height: 8),
 
@@ -180,7 +244,7 @@ class _SignupPageState extends State<SignupPage> {
 
                 Text(
                   'Email Address',
-                  style: TextStyle(color: AppColors.text),
+                  style: TextStyle(color: ColorResources.text),
                 ),
                 SizedBox(height: 8),
 
@@ -209,7 +273,7 @@ class _SignupPageState extends State<SignupPage> {
 
                 Text(
                   'Password',
-                  style: TextStyle(color: AppColors.text),
+                  style: TextStyle(color: ColorResources.text),
                 ),
                 SizedBox(height: 8),
 
@@ -237,7 +301,7 @@ class _SignupPageState extends State<SignupPage> {
 
                 Text(
                   'Confirm Password',
-                  style: TextStyle(color: AppColors.text),
+                  style: TextStyle(color: ColorResources.text),
                 ),
                 SizedBox(height: 8),
 
@@ -266,18 +330,27 @@ class _SignupPageState extends State<SignupPage> {
                 SizedBox(
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: createAccount,
+                    onPressed: isLoading ? null : createAccount,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.button,
-                      foregroundColor: AppColors.white,
+                      backgroundColor: ColorResources.button,
+                      foregroundColor: ColorResources.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: Text(
-                      'Create Account',
-                      style: TextStyle(fontSize: 20),
-                    ),
+                    child: isLoading
+                        ? SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              color: ColorResources.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            'Create Account',
+                            style: TextStyle(fontSize: 20),
+                          ),
                   ),
                 ),
 
@@ -289,7 +362,7 @@ class _SignupPageState extends State<SignupPage> {
                   children: [
                     Text(
                       'Already have an account?',
-                      style: TextStyle(color: AppColors.text),
+                      style: TextStyle(color: ColorResources.text),
                     ),
                     TextButton(
                       onPressed: () {
@@ -298,7 +371,7 @@ class _SignupPageState extends State<SignupPage> {
                       child: Text(
                         'Login',
                         style: TextStyle(
-                          color: AppColors.primary,
+                          color: ColorResources.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

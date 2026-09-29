@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../components/guest_page.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
+import 'order_success.dart';
 
 class PaymentPage extends StatefulWidget {
   final int quantity;
@@ -29,10 +30,10 @@ class _PaymentPageState extends State<PaymentPage> {
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: ColorResources.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: selected ? AppColors.primary : AppColors.border,
+          color: selected ? ColorResources.primary : ColorResources.border,
           width: selected ? 2 : 1,
         ),
       ),
@@ -41,12 +42,12 @@ class _PaymentPageState extends State<PaymentPage> {
           horizontal: 16,
           vertical: 8,
         ),
-        leading: Icon(icon, color: AppColors.primary),
+        leading: Icon(icon, color: ColorResources.primary),
         title: Text(
           title,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: AppColors.heading,
+            color: ColorResources.heading,
           ),
         ),
         subtitle: title == 'Cash on Delivery'
@@ -54,21 +55,21 @@ class _PaymentPageState extends State<PaymentPage> {
                 'RECOMMENDED',
                 style: TextStyle(
                   fontSize: 10,
-                  color: AppColors.lightText,
+                  color: ColorResources.lightText,
                 ),
               )
             : Text(
                 'Demo option — gateway not connected',
                 style: TextStyle(
                   fontSize: 11,
-                  color: AppColors.lightText,
+                  color: ColorResources.lightText,
                 ),
               ),
         trailing: Icon(
           selected
               ? Icons.radio_button_checked
               : Icons.radio_button_unchecked,
-          color: AppColors.primary,
+          color: ColorResources.primary,
         ),
         onTap: () {
           setState(() {
@@ -97,7 +98,7 @@ class _PaymentPageState extends State<PaymentPage> {
               'ORDER SUMMARY',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: AppColors.lightText,
+                color: ColorResources.lightText,
               ),
             ),
 
@@ -106,9 +107,9 @@ class _PaymentPageState extends State<PaymentPage> {
             Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: ColorResources.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: ColorResources.border),
               ),
               child: Row(
                 children: [
@@ -130,14 +131,14 @@ class _PaymentPageState extends State<PaymentPage> {
                           'Club Prime Plywood',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppColors.heading,
+                            color: ColorResources.heading,
                           ),
                         ),
                         SizedBox(height: 8),
                         Text(
                           'Quantity: ${widget.quantity} '
                           '${widget.quantity == 1 ? 'Sheet' : 'Sheets'}',
-                          style: TextStyle(color: AppColors.lightText),
+                          style: TextStyle(color: ColorResources.lightText),
                         ),
                         SizedBox(height: 8),
                         Text(
@@ -145,7 +146,7 @@ class _PaymentPageState extends State<PaymentPage> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                            color: ColorResources.primary,
                           ),
                         ),
                       ],
@@ -161,7 +162,7 @@ class _PaymentPageState extends State<PaymentPage> {
               'SELECT PAYMENT OPTION',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: AppColors.lightText,
+                color: ColorResources.lightText,
               ),
             ),
 
@@ -182,9 +183,9 @@ class _PaymentPageState extends State<PaymentPage> {
             Container(
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: ColorResources.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: ColorResources.border),
               ),
               child: Column(
                 children: [
@@ -193,7 +194,7 @@ class _PaymentPageState extends State<PaymentPage> {
                       Expanded(
                         child: Text(
                           'Total Amount',
-                          style: TextStyle(color: AppColors.text),
+                          style: TextStyle(color: ColorResources.text),
                         ),
                       ),
                       Text(
@@ -201,7 +202,7 @@ class _PaymentPageState extends State<PaymentPage> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
+                          color: ColorResources.primary,
                         ),
                       ),
                     ],
@@ -214,7 +215,7 @@ class _PaymentPageState extends State<PaymentPage> {
                       Expanded(
                         child: Text(
                           'Payment Mode',
-                          style: TextStyle(color: AppColors.text),
+                          style: TextStyle(color: ColorResources.text),
                         ),
                       ),
                       Expanded(
@@ -223,7 +224,7 @@ class _PaymentPageState extends State<PaymentPage> {
                           textAlign: TextAlign.right,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                            color: ColorResources.primary,
                           ),
                         ),
                       ),
@@ -242,15 +243,17 @@ class _PaymentPageState extends State<PaymentPage> {
                     'Razorpay is not connected. No payment was made.',
                   );
                 } else {
-                  showMessage(
-                    'Cash on Delivery selected. '
-                    'Order submission is not connected yet.',
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => OrderSuccessPage(),
+                    ),
                   );
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
+                backgroundColor: ColorResources.primary,
+                foregroundColor: ColorResources.white,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -263,11 +266,11 @@ class _PaymentPageState extends State<PaymentPage> {
 
             OutlinedButton(
               onPressed: () {
-                showMessage('Back navigation will be connected later.');
+                Navigator.pop(context);
               },
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: BorderSide(color: AppColors.border),
+                foregroundColor: ColorResources.primary,
+                side: BorderSide(color: ColorResources.border),
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -283,7 +286,7 @@ class _PaymentPageState extends State<PaymentPage> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.lightText,
+                color: ColorResources.lightText,
               ),
             ),
           ],

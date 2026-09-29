@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../components/guest_page.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
+import 'browse_products.dart';
+import 'contact_shop.dart';
 
 class CompareProductsPage extends StatelessWidget {
   const CompareProductsPage({super.key});
@@ -15,9 +17,9 @@ class CompareProductsPage extends StatelessWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: ColorResources.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: ColorResources.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -36,7 +38,7 @@ class CompareProductsPage extends StatelessWidget {
                   brand,
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.text,
+                    color: ColorResources.text,
                   ),
                 ),
                 SizedBox(height: 8),
@@ -45,7 +47,7 @@ class CompareProductsPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: ColorResources.primary,
                   ),
                 ),
               ],
@@ -64,7 +66,7 @@ class CompareProductsPage extends StatelessWidget {
         style: TextStyle(
           fontSize: 13,
           fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-          color: AppColors.text,
+          color: ColorResources.text,
         ),
       ),
     );
@@ -117,7 +119,7 @@ class CompareProductsPage extends StatelessWidget {
               'Sample comparison from the design',
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.lightText,
+                color: ColorResources.lightText,
               ),
             ),
 
@@ -134,22 +136,22 @@ class CompareProductsPage extends StatelessWidget {
                     child: Container(
                       clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
-                        color: AppColors.white,
+                        color: ColorResources.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: ColorResources.border),
                       ),
                       child: Table(
                         defaultVerticalAlignment:
                             TableCellVerticalAlignment.middle,
                         border: TableBorder(
                           horizontalInside: BorderSide(
-                            color: AppColors.border,
+                            color: ColorResources.border,
                           ),
                         ),
                         children: [
                           TableRow(
                             decoration: BoxDecoration(
-                              color: AppColors.border,
+                              color: ColorResources.border,
                             ),
                             children: [
                               tableCell('Specification', true),
@@ -193,11 +195,16 @@ class CompareProductsPage extends StatelessWidget {
 
             ElevatedButton(
               onPressed: () {
-                showMessage(context, 'Contact page will be connected later.');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ContactShopPage(),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.button,
-                foregroundColor: AppColors.white,
+                backgroundColor: ColorResources.button,
+                foregroundColor: ColorResources.white,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -213,11 +220,16 @@ class CompareProductsPage extends StatelessWidget {
 
             OutlinedButton(
               onPressed: () {
-                showMessage(context, 'Products page will be connected later.');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BrowseProductsPage(),
+                  ),
+                );
               },
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: BorderSide(color: AppColors.primary),
+                foregroundColor: ColorResources.primary,
+                side: BorderSide(color: ColorResources.primary),
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
+import 'manage_brands.dart';
+import 'manage_categories.dart';
+import 'manage_orders.dart';
+import 'manage_products.dart';
+import 'manage_customers.dart';
+import 'stock_management.dart';
+import 'admin_profile.dart';
 
 class AdminDashboardPage extends StatelessWidget {
   const AdminDashboardPage({super.key});
@@ -10,18 +17,26 @@ class AdminDashboardPage extends StatelessWidget {
     );
   }
 
+  void openPage(BuildContext context, Widget page) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => page),
+    );
+  }
+
   Widget menuCard(
     BuildContext context,
     String title,
     IconData icon,
+    Widget? page,
   ) {
     return Padding(
       padding: EdgeInsets.only(bottom: 16),
       child: Material(
-        color: AppColors.white,
+        color: ColorResources.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: AppColors.border),
+          side: BorderSide(color: ColorResources.border),
         ),
         clipBehavior: Clip.antiAlias,
         child: ListTile(
@@ -31,7 +46,7 @@ class AdminDashboardPage extends StatelessWidget {
           ),
           leading: Icon(
             icon,
-            color: AppColors.primary,
+            color: ColorResources.primary,
             size: 28,
           ),
           title: Text(
@@ -39,18 +54,22 @@ class AdminDashboardPage extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.heading,
+              color: ColorResources.heading,
             ),
           ),
           trailing: Icon(
             Icons.chevron_right,
-            color: AppColors.lightText,
+            color: ColorResources.lightText,
           ),
           onTap: () {
-            showMessage(
-              context,
-              '$title will be connected later.',
-            );
+            if (page == null) {
+              showMessage(
+                context,
+                '$title will be connected later.',
+              );
+            } else {
+              openPage(context, page);
+            }
           },
         ),
       ),
@@ -60,11 +79,11 @@ class AdminDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ColorResources.background,
       appBar: AppBar(
         title: Text('Admin Dashboard'),
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.primary,
+        backgroundColor: ColorResources.background,
+        foregroundColor: ColorResources.primary,
         actions: [
           IconButton(
             tooltip: 'Notifications',
@@ -80,10 +99,7 @@ class AdminDashboardPage extends StatelessWidget {
             tooltip: 'Admin Profile',
             icon: Icon(Icons.account_circle_outlined),
             onPressed: () {
-              showMessage(
-                context,
-                'Admin Profile will be connected later.',
-              );
+              openPage(context, AdminProfilePage());
             },
           ),
         ],
@@ -99,7 +115,7 @@ class AdminDashboardPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: AppColors.heading,
+                color: ColorResources.heading,
               ),
             ),
 
@@ -110,7 +126,7 @@ class AdminDashboardPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 height: 1.5,
-                color: AppColors.text,
+                color: ColorResources.text,
               ),
             ),
 
@@ -120,36 +136,43 @@ class AdminDashboardPage extends StatelessWidget {
               context,
               'Manage Products',
               Icons.inventory_2_outlined,
+              ManageProductsPage(),
             ),
             menuCard(
               context,
               'Categories',
               Icons.category_outlined,
+              ManageCategoriesPage(),
             ),
             menuCard(
               context,
               'Brands',
               Icons.business_outlined,
+              ManageBrandsPage(),
             ),
             menuCard(
               context,
               'Stock',
               Icons.inventory_outlined,
+              StockManagementPage(),
             ),
             menuCard(
               context,
               'Customers',
               Icons.people_outline,
+              ManageCustomersPage(),
             ),
             menuCard(
               context,
               'Orders',
               Icons.receipt_long_outlined,
+              ManageOrdersPage(),
             ),
             menuCard(
               context,
               'Logout',
               Icons.logout,
+              null,
             ),
           ],
         ),

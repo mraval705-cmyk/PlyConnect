@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import '../login.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
+import '../user/my_orders.dart';
+import '../user/my_profile.dart';
+import '../user/wishlist.dart';
+import 'browse_products.dart';
+import 'contact_shop.dart';
+import 'select_product.dart';
 
 class ProductDetailsPage extends StatelessWidget {
   final Map<String, String> product;
@@ -25,6 +31,35 @@ class ProductDetailsPage extends StatelessWidget {
     );
   }
 
+  // The Compare button goes to the Select Product screen first, because the
+  // design asks the user to pick one more product before the comparison.
+  void openCompare(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SelectProductPage(),
+      ),
+    );
+  }
+
+  void openContactShop(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ContactShopPage(),
+      ),
+    );
+  }
+
+  void openBrowse(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BrowseProductsPage(),
+      ),
+    );
+  }
+
   Widget specification(String title, String value) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 8),
@@ -34,7 +69,7 @@ class ProductDetailsPage extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: TextStyle(color: AppColors.text),
+              style: TextStyle(color: ColorResources.text),
             ),
           ),
           Expanded(
@@ -43,7 +78,7 @@ class ProductDetailsPage extends StatelessWidget {
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: AppColors.heading,
+                color: ColorResources.heading,
               ),
             ),
           ),
@@ -55,12 +90,12 @@ class ProductDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ColorResources.background,
 
       appBar: AppBar(
         title: Text('Product Details'),
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.primary,
+        backgroundColor: ColorResources.background,
+        foregroundColor: ColorResources.primary,
         actions: [
           IconButton(
             tooltip: 'Login to save product',
@@ -93,7 +128,7 @@ class ProductDetailsPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 letterSpacing: 1,
-                color: AppColors.lightText,
+                color: ColorResources.lightText,
               ),
             ),
 
@@ -104,7 +139,7 @@ class ProductDetailsPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: AppColors.heading,
+                color: ColorResources.heading,
               ),
             ),
 
@@ -114,7 +149,7 @@ class ProductDetailsPage extends StatelessWidget {
               '${product['category']} Plywood',
               style: TextStyle(
                 fontSize: 16,
-                color: AppColors.text,
+                color: ColorResources.text,
               ),
             ),
 
@@ -125,7 +160,7 @@ class ProductDetailsPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+                color: ColorResources.primary,
               ),
             ),
 
@@ -136,7 +171,7 @@ class ProductDetailsPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.heading,
+                color: ColorResources.heading,
               ),
             ),
 
@@ -150,7 +185,7 @@ class ProductDetailsPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 height: 1.6,
-                color: AppColors.text,
+                color: ColorResources.text,
               ),
             ),
 
@@ -159,9 +194,9 @@ class ProductDetailsPage extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: ColorResources.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: ColorResources.border),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,11 +206,11 @@ class ProductDetailsPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.heading,
+                      color: ColorResources.heading,
                     ),
                   ),
 
-                  Divider(color: AppColors.border),
+                  Divider(color: ColorResources.border),
 
                   specification('Brand', product['brand']!),
                   specification('Category', product['category']!),
@@ -193,14 +228,11 @@ class ProductDetailsPage extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      showMessage(
-                        context,
-                        'Compare page is not connected yet.',
-                      );
+                      openCompare(context);
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: BorderSide(color: AppColors.primary),
+                      foregroundColor: ColorResources.primary,
+                      side: BorderSide(color: ColorResources.primary),
                       padding: EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -215,14 +247,11 @@ class ProductDetailsPage extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      showMessage(
-                        context,
-                        'Contact page is not connected yet.',
-                      );
+                      openContactShop(context);
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: BorderSide(color: AppColors.primary),
+                      foregroundColor: ColorResources.primary,
+                      side: BorderSide(color: ColorResources.primary),
                       padding: EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -243,8 +272,8 @@ class ProductDetailsPage extends StatelessWidget {
                   openLogin(context);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.white,
+                  backgroundColor: ColorResources.primary,
+                  foregroundColor: ColorResources.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -263,7 +292,7 @@ class ProductDetailsPage extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.lightText,
+                color: ColorResources.lightText,
               ),
             ),
 
@@ -275,21 +304,37 @@ class ProductDetailsPage extends StatelessWidget {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.background,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.text,
+        backgroundColor: ColorResources.background,
+        selectedItemColor: ColorResources.primary,
+        unselectedItemColor: ColorResources.text,
         selectedFontSize: 11,
         unselectedFontSize: 11,
         onTap: (index) {
           if (index == 0) {
             Navigator.pop(context);
           } else if (index == 1) {
-            showMessage(
+            openBrowse(context);
+          } else if (index == 2) {
+            Navigator.push(
               context,
-              'Use the category filters on Home.',
+              MaterialPageRoute(
+                builder: (context) => const WishlistPage(),
+              ),
+            );
+          } else if (index == 3) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MyOrdersPage(),
+              ),
             );
           } else {
-            openLogin(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MyProfilePage(),
+              ),
+            );
           }
         },
         items: [

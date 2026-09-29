@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
 
 class EditAddressPage extends StatefulWidget {
   const EditAddressPage({super.key});
@@ -11,27 +13,63 @@ class EditAddressPage extends StatefulWidget {
 class _EditAddressPageState extends State<EditAddressPage> {
   final _formKey = GlobalKey<FormState>();
 
-  final houseController = TextEditingController(
-    text: '123, 4th Floor, Hemkunt Tower',
-  );
-
-  final areaController = TextEditingController(
-    text: 'Nehru Place',
-  );
-
-  final cityController = TextEditingController(
-    text: 'New Delhi',
-  );
-
-  final stateController = TextEditingController(
-    text: 'Delhi',
-  );
-
-  final pincodeController = TextEditingController(
-    text: '110019',
-  );
-
+  // Empty by default and then filled with the address already saved for the
+  // logged in user, so no sample values are shown in a real form.
+  final houseController = TextEditingController();
+  final areaController = TextEditingController();
+  final cityController = TextEditingController();
+  final stateController = TextEditingController();
+  final pincodeController = TextEditingController();
   final landmarkController = TextEditingController();
+
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadAddress();
+  }
+
+  Future<void> loadAddress() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+      return;
+    }
+
+    try {
+      final document = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+
+      final data = document.data();
+
+      if (data != null && data['address'] != null) {
+        houseController.text = '${data['house'] ?? ''}';
+        areaController.text = '${data['area'] ?? ''}';
+        cityController.text = '${data['city'] ?? ''}';
+        stateController.text = '${data['state'] ?? ''}';
+        pincodeController.text = '${data['pincode'] ?? ''}';
+        landmarkController.text = '${data['landmark'] ?? ''}';
+      }
+    } catch (error) {
+      // Keep the fields empty.
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      isLoading = false;
+    });
+  }
 
   void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -43,17 +81,17 @@ class _EditAddressPageState extends State<EditAddressPage> {
     return InputDecoration(
       labelText: label,
       filled: true,
-      fillColor: AppColors.white,
+      fillColor: ColorResources.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: ColorResources.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: AppColors.primary),
+        borderSide: BorderSide(color: ColorResources.primary),
       ),
     );
   }
@@ -65,12 +103,62 @@ class _EditAddressPageState extends State<EditAddressPage> {
     return null;
   }
 
-  void saveAddress() {
-    if (_formKey.currentState!.validate()) {
-      showMessage(
-        'Address valid. Database saving is not connected yet.',
-      );
+  // Joins the six fields into one string and saves it in Firestore.
+  String buildAddressText() {
+    final landmark = landmarkController.text.trim();
+
+    final address =
+        '${houseController.text.trim()}, ${areaController.text.trim()},\n'
+        '${cityController.text.trim()} - ${pincodeController.text.trim()}';
+
+    if (landmark.isEmpty) {
+      return address;
     }
+
+    return 'Landmark: $landmark\n$address';
+  }
+
+  Future<void> saveAddress() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      showMessage('Please login before saving an address.');
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .set({
+        'house': houseController.text.trim(),
+        'area': areaController.text.trim(),
+        'city': cityController.text.trim(),
+        'state': stateController.text.trim(),
+        'pincode': pincodeController.text.trim(),
+        'landmark': landmarkController.text.trim(),
+        'address': buildAddressText(),
+      }, SetOptions(merge: true));
+    } catch (error) {
+      showMessage('Could not save the address. $error');
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    showMessage('Address saved.');
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    });
   }
 
   @override
@@ -87,11 +175,11 @@ class _EditAddressPageState extends State<EditAddressPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ColorResources.background,
       appBar: AppBar(
         title: Text('Edit Delivery Address'),
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.primary,
+        backgroundColor: ColorResources.background,
+        foregroundColor: ColorResources.primary,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -104,7 +192,7 @@ class _EditAddressPageState extends State<EditAddressPage> {
                 Icon(
                   Icons.location_on_outlined,
                   size: 60,
-                  color: AppColors.primary,
+                  color: ColorResources.primary,
                 ),
 
                 SizedBox(height: 12),
@@ -115,7 +203,7 @@ class _EditAddressPageState extends State<EditAddressPage> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: ColorResources.primary,
                   ),
                 ),
 
@@ -126,7 +214,7 @@ class _EditAddressPageState extends State<EditAddressPage> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     height: 1.5,
-                    color: AppColors.text,
+                    color: ColorResources.text,
                   ),
                 ),
 
@@ -194,10 +282,10 @@ class _EditAddressPageState extends State<EditAddressPage> {
                 SizedBox(height: 32),
 
                 ElevatedButton(
-                  onPressed: saveAddress,
+                  onPressed: isLoading ? null : saveAddress,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.button,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: ColorResources.button,
+                    foregroundColor: ColorResources.white,
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -210,13 +298,11 @@ class _EditAddressPageState extends State<EditAddressPage> {
 
                 OutlinedButton(
                   onPressed: () {
-                    showMessage(
-                      'Cancel navigation will be connected later.',
-                    );
+                    Navigator.pop(context);
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: BorderSide(color: AppColors.primary),
+                    foregroundColor: ColorResources.primary,
+                    side: BorderSide(color: ColorResources.primary),
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
+import 'add_brand.dart';
+import 'edit_brand.dart';
 
 class ManageBrandsPage extends StatefulWidget {
   const ManageBrandsPage({super.key});
@@ -11,58 +14,20 @@ class ManageBrandsPage extends StatefulWidget {
 class _ManageBrandsPageState extends State<ManageBrandsPage> {
   String search = '';
 
-  // Sample brand information from Figma
-  final brands = [
-    {
-      'id': 'B001',
-      'name': 'Greenply',
-      'description':
-          'Premium quality plywood and veneers with '
-          'eco-friendly certifications.',
-      'image': 'assets/images/brand_greenply.png',
-    },
-    {
-      'id': 'B002',
-      'name': 'CenturyPly',
-      'description':
-          'Industry leader in durable plywood, laminates, '
-          'and decorative veneers.',
-      'image': 'assets/images/brand_century.png',
-    },
-    {
-      'id': 'B003',
-      'name': 'Kitply',
-      'description':
-          'Heritage brand known for high-grade marine '
-          'plywood and industrial solutions.',
-      'image': 'assets/images/brand_kitply.png',
-    },
-    {
-      'id': 'B004',
-      'name': 'Austin Plywood',
-      'description':
-          'Specialized hardwood plywood and architectural '
-          'veneers for luxury interiors.',
-      'image': 'assets/images/brand_austin.png',
-    },
-  ];
-
   void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
-  Future<void> removeBrand(Map<String, String> brand) async {
+  Future<void> removeBrand(String docId, String name) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: AppColors.background,
+          backgroundColor: ColorResources.background,
           title: Text('Remove Brand'),
-          content: Text(
-            'Remove ${brand['name']} from this demo list?',
-          ),
+          content: Text('Remove $name from the database?'),
           actions: [
             TextButton(
               onPressed: () {
@@ -70,7 +35,7 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
               },
               child: Text(
                 'Cancel',
-                style: TextStyle(color: AppColors.primary),
+                style: TextStyle(color: ColorResources.primary),
               ),
             ),
             TextButton(
@@ -79,7 +44,7 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
               },
               child: Text(
                 'Remove',
-                style: TextStyle(color: AppColors.primary),
+                style: TextStyle(color: ColorResources.primary),
               ),
             ),
           ],
@@ -87,25 +52,38 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
       },
     );
 
-    if (!mounted || confirmed != true) return;
+    if (!mounted || confirmed != true) {
+      return;
+    }
 
-    setState(() {
-      brands.removeWhere(
-        (item) => item['id'] == brand['id'],
-      );
-    });
+    try {
+      await FirebaseFirestore.instance
+          .collection('brands')
+          .doc(docId)
+          .delete();
+    } catch (error) {
+      if (mounted) {
+        showMessage('Could not remove the brand. $error');
+      }
+      return;
+    }
 
-    showMessage('Brand removed from this demo list.');
+    if (mounted) {
+      showMessage('Brand removed.');
+    }
   }
 
-  Widget brandCard(Map<String, String> brand) {
+  Widget brandCard(String docId, Map<String, dynamic> brand) {
+    final name = '${brand['name'] ?? ''}';
+    final description = '${brand['description'] ?? ''}';
+
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: ColorResources.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: ColorResources.border),
       ),
       child: Column(
         children: [
@@ -115,7 +93,7 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.asset(
-                  brand['image']!,
+                  brand['image'] ?? 'assets/images/green_gold.png',
                   width: 70,
                   height: 70,
                   fit: BoxFit.contain,
@@ -129,22 +107,22 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      brand['name']!,
+                      name,
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+                        color: ColorResources.primary,
                       ),
                     ),
 
                     SizedBox(height: 8),
 
                     Text(
-                      brand['description']!,
+                      description,
                       style: TextStyle(
                         fontSize: 15,
                         height: 1.5,
-                        color: AppColors.text,
+                        color: ColorResources.text,
                       ),
                     ),
                   ],
@@ -161,21 +139,26 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
               IconButton(
                 tooltip: 'Edit brand',
                 onPressed: () {
-                  showMessage('Edit Brand will be connected later.');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditBrandPage(),
+                    ),
+                  );
                 },
                 icon: Icon(
                   Icons.edit_outlined,
-                  color: AppColors.primary,
+                  color: ColorResources.primary,
                 ),
               ),
               IconButton(
                 tooltip: 'Remove brand',
                 onPressed: () {
-                  removeBrand(brand);
+                  removeBrand(docId, name);
                 },
                 icon: Icon(
                   Icons.delete_outline,
-                  color: AppColors.primary,
+                  color: ColorResources.primary,
                 ),
               ),
             ],
@@ -187,87 +170,119 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredBrands = brands.where((brand) {
-      return brand['name']!.toLowerCase().contains(search) ||
-          brand['description']!.toLowerCase().contains(search);
-    }).toList();
-
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ColorResources.background,
       appBar: AppBar(
         title: Text('Brands'),
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.primary,
+        backgroundColor: ColorResources.background,
+        foregroundColor: ColorResources.primary,
       ),
       body: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.all(16),
+        child: Column(
           children: [
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Search Brand',
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: AppColors.primary,
-                ),
-                filled: true,
-                fillColor: AppColors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: AppColors.border),
-                ),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  search = value.trim().toLowerCase();
-                });
-              },
-            ),
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Search Brand',
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: ColorResources.primary,
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        search = value.trim().toLowerCase();
+                      });
+                    },
+                  ),
 
-            SizedBox(height: 16),
+                  SizedBox(height: 16),
 
-            ElevatedButton.icon(
-              onPressed: () {
-                showMessage('Add Brand will be connected later.');
-              },
-              icon: Icon(Icons.add),
-              label: Text('Add Brand'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.button,
-                foregroundColor: AppColors.white,
-                padding: EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-
-            SizedBox(height: 12),
-
-            Text(
-              'Sample brands — database not connected',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.lightText,
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AddBrandPage(),
+                          ),
+                        );
+                      },
+                      icon: Icon(Icons.add),
+                      label: Text('Add Brand'),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            SizedBox(height: 20),
+            // StreamBuilder keeps this list live: add or remove a brand in
+            // Firestore and it changes here without refreshing.
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream:
+                    FirebaseFirestore.instance.collection('brands').snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(
+                      child: CircularProgressIndicator(
+                        color: ColorResources.primary,
+                      ),
+                    );
+                  }
 
-            if (filteredBrands.isEmpty)
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 40),
-                child: Text(
-                  'No brands found.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.text),
-                ),
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'Could not load brands.\n${snapshot.error}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: ColorResources.text),
+                        ),
+                      ),
+                    );
+                  }
+
+                  final docs = snapshot.data?.docs ?? [];
+
+                  if (docs.isEmpty) {
+                    return SizedBox.shrink();
+                  }
+
+                  final visible = docs.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final name = '${data['name'] ?? ''}'.toLowerCase();
+                    final description =
+                        '${data['description'] ?? ''}'.toLowerCase();
+                    return name.contains(search) || description.contains(search);
+                  }).toList();
+
+                  if (visible.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'No brands found.',
+                        style: TextStyle(color: ColorResources.text),
+                      ),
+                    );
+                  }
+
+                  return ListView(
+                    padding: EdgeInsets.all(16),
+                    children: visible
+                        .map((doc) => brandCard(doc.id, doc.data() as Map<String, dynamic>))
+                        .toList(),
+                  );
+                },
               ),
-
-            ...filteredBrands.map(brandCard),
+            ),
           ],
         ),
       ),

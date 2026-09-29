@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../components/guest_page.dart';
-import '../resources/app_colors.dart';
+import '../resources/color_resources.dart';
 
 class ContactShopPage extends StatelessWidget {
   const ContactShopPage({super.key});
@@ -22,8 +22,8 @@ class ContactShopPage extends StatelessWidget {
           showMessage(context, '$label will be connected later.');
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.button,
-          foregroundColor: AppColors.white,
+          backgroundColor: ColorResources.button,
+          foregroundColor: ColorResources.white,
           padding: EdgeInsets.symmetric(
             horizontal: 6,
             vertical: 16,
@@ -49,12 +49,12 @@ class ContactShopPage extends StatelessWidget {
 
   Widget information(IconData icon, String label, String value) {
     return ListTile(
-      leading: Icon(icon, color: AppColors.primary),
+      leading: Icon(icon, color: ColorResources.primary),
       title: Text(
         label,
         style: TextStyle(
           fontSize: 13,
-          color: AppColors.text,
+          color: ColorResources.text,
         ),
       ),
       subtitle: Text(
@@ -62,7 +62,7 @@ class ContactShopPage extends StatelessWidget {
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.bold,
-          color: AppColors.heading,
+          color: ColorResources.heading,
         ),
       ),
     );
@@ -72,16 +72,16 @@ class ContactShopPage extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: ColorResources.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: ColorResources.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: AppColors.primary),
+              Icon(icon, color: ColorResources.primary),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -89,7 +89,7 @@ class ContactShopPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: ColorResources.primary,
                   ),
                 ),
               ),
@@ -114,7 +114,7 @@ class ContactShopPage extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: ColorResources.white,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -132,7 +132,7 @@ class ContactShopPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.heading,
+                      color: ColorResources.heading,
                     ),
                   ),
                   SizedBox(height: 8),
@@ -143,7 +143,7 @@ class ContactShopPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       height: 1.5,
-                      color: AppColors.text,
+                      color: ColorResources.text,
                     ),
                   ),
                 ],
@@ -173,7 +173,7 @@ class ContactShopPage extends StatelessWidget {
               'Sample contact details from Figma',
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.lightText,
+                color: ColorResources.lightText,
               ),
             ),
 
@@ -181,9 +181,9 @@ class ContactShopPage extends StatelessWidget {
 
             Container(
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: ColorResources.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: ColorResources.border),
               ),
               child: Column(
                 children: [
@@ -192,13 +192,13 @@ class ContactShopPage extends StatelessWidget {
                     'Owner Name',
                     'Rajesh Kumar',
                   ),
-                  Divider(height: 1, color: AppColors.border),
+                  Divider(height: 1, color: ColorResources.border),
                   information(
                     Icons.phone_outlined,
                     'Mobile',
                     '+91 98765 43210',
                   ),
-                  Divider(height: 1, color: AppColors.border),
+                  Divider(height: 1, color: ColorResources.border),
                   information(
                     Icons.mail_outline,
                     'Email',
@@ -218,14 +218,14 @@ class ContactShopPage extends StatelessWidget {
                 children: [
                   Text(
                     'Monday to Saturday',
-                    style: TextStyle(color: AppColors.text),
+                    style: TextStyle(color: ColorResources.text),
                   ),
                   SizedBox(height: 6),
                   Text(
                     '9:00 AM – 7:00 PM',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: AppColors.heading,
+                      color: ColorResources.heading,
                     ),
                   ),
                   SizedBox(height: 12),
@@ -233,7 +233,7 @@ class ContactShopPage extends StatelessWidget {
                     'Closed on Sundays & National Holidays',
                     style: TextStyle(
                       fontStyle: FontStyle.italic,
-                      color: AppColors.text,
+                      color: ColorResources.text,
                     ),
                   ),
                 ],
@@ -251,7 +251,7 @@ class ContactShopPage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   height: 1.6,
-                  color: AppColors.text,
+                  color: ColorResources.text,
                 ),
               ),
             ),

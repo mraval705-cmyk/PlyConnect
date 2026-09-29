@@ -1,7 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../components/guest_page.dart';
-import '../resources/app_colors.dart';
+import '../guest/product_details.dart';
+import '../login.dart';
+import '../resources/color_resources.dart';
+import 'order_summary.dart';
 
+/// The wishlist is stored inside each user's own document:
+///   users / {uid} / wishlist / {productId}
+/// Because of this, a brand new user automatically has an empty wishlist.
 class WishlistPage extends StatefulWidget {
   const WishlistPage({super.key});
 
@@ -10,59 +18,62 @@ class WishlistPage extends StatefulWidget {
 }
 
 class _WishlistPageState extends State<WishlistPage> {
-  final products = [
-    {
-      'name': 'Club Prime Plywood',
-      'brand': 'CENTURYPLY',
-      'thickness': '19 mm',
-      'price': '145',
-    },
-    {
-      'name': 'Architectural Birch',
-      'brand': 'GREENPLY',
-      'thickness': '12 mm',
-      'price': '112',
-    },
-    {
-      'name': 'Marine Shield BWP',
-      'brand': 'KITPLY',
-      'thickness': '18 mm',
-      'price': '185',
-    },
-    {
-      'name': 'Teak Veneer Board',
-      'brand': 'AUSTIN PLY',
-      'thickness': '6 mm',
-      'price': '210',
-    },
-  ];
-
   void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
-  void removeProduct(int index) {
-    final name = products[index]['name'];
+  Stream<QuerySnapshot>? wishlistStream() {
+    final currentUser = FirebaseAuth.instance.currentUser;
 
-    setState(() {
-      products.removeAt(index);
-    });
+    if (currentUser == null) {
+      return null;
+    }
 
-    showMessage('$name removed from this demo wishlist.');
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .collection('wishlist')
+        .snapshots();
   }
 
-  Widget productCard(int index) {
-    final product = products[index];
+  Future<void> removeProduct(String docId, String name) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('wishlist')
+          .doc(docId)
+          .delete();
+    } catch (error) {
+      if (mounted) {
+        showMessage('Could not remove the product. $error');
+      }
+      return;
+    }
+
+    if (mounted) {
+      showMessage('$name removed from your wishlist.');
+    }
+  }
+
+  Widget productCard(String docId, Map<String, dynamic> product) {
+    final name = '${product['name'] ?? ''}';
 
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: ColorResources.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: ColorResources.border),
       ),
       child: Column(
         children: [
@@ -72,7 +83,7 @@ class _WishlistPageState extends State<WishlistPage> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.asset(
-                  'assets/images/wishlist_product.png',
+                  product['image'] ?? 'assets/images/club_prime.png',
                   width: 80,
                   height: 95,
                   fit: BoxFit.cover,
@@ -86,36 +97,36 @@ class _WishlistPageState extends State<WishlistPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      product['name']!,
+                      name,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+                        color: ColorResources.primary,
                       ),
                     ),
                     SizedBox(height: 6),
                     Text(
-                      product['brand']!,
+                      '${product['brand'] ?? ''}',
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.text,
+                        color: ColorResources.text,
                       ),
                     ),
                     SizedBox(height: 6),
                     Text(
-                      'Thickness: ${product['thickness']}',
+                      'Thickness: ${product['thickness'] ?? ''}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.lightText,
+                        color: ColorResources.lightText,
                       ),
                     ),
                     SizedBox(height: 6),
                     Text(
-                      '₹${product['price']} / sq.ft',
+                      '₹${product['price'] ?? 0} / sq.ft',
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+                        color: ColorResources.primary,
                       ),
                     ),
                   ],
@@ -125,18 +136,18 @@ class _WishlistPageState extends State<WishlistPage> {
               IconButton(
                 tooltip: 'Remove from wishlist',
                 onPressed: () {
-                  removeProduct(index);
+                  removeProduct(docId, name);
                 },
                 icon: Icon(
                   Icons.favorite,
-                  color: AppColors.primary,
+                  color: ColorResources.primary,
                 ),
               ),
             ],
           ),
 
           SizedBox(height: 12),
-          Divider(color: AppColors.border),
+          Divider(color: ColorResources.border),
           SizedBox(height: 8),
 
           Row(
@@ -144,18 +155,25 @@ class _WishlistPageState extends State<WishlistPage> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    showMessage('Product Details will be connected later.');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductDetailsPage(
+                          product: {
+                            'name': '${product['name'] ?? ''}',
+                            'brand': '${product['brand'] ?? ''}',
+                            'category': '${product['category'] ?? ''}',
+                            'thickness': '${product['thickness'] ?? ''}',
+                            'price': '₹${product['price'] ?? 0} / sq.ft',
+                            'image': '${product['image'] ?? ''}',
+                          },
+                        ),
+                      ),
+                    );
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: BorderSide(color: AppColors.border),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    foregroundColor: ColorResources.primary,
+                    padding: EdgeInsets.symmetric(vertical: 12),
                   ),
                   child: Text('View Details'),
                 ),
@@ -164,18 +182,17 @@ class _WishlistPageState extends State<WishlistPage> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    showMessage('Order Summary will be connected later.');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrderSummaryPage(),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.button,
-                    foregroundColor: AppColors.buttonText,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    backgroundColor: ColorResources.button,
+                    foregroundColor: ColorResources.buttonText,
+                    padding: EdgeInsets.symmetric(vertical: 12),
                   ),
                   child: Text('Place Order'),
                 ),
@@ -187,50 +204,127 @@ class _WishlistPageState extends State<WishlistPage> {
     );
   }
 
+  // Shown when nobody is logged in.
+  Widget loginNeeded() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.favorite_border,
+              size: 60,
+              color: ColorResources.lightText,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Please login to see your wishlist.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                color: ColorResources.text,
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LoginPage(),
+                  ),
+                );
+              },
+              child: Text('Login'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final stream = wishlistStream();
+
     return GuestPage(
       title: 'My Wishlist',
       selectedIndex: 2,
-      body: ListView(
-        padding: EdgeInsets.all(16),
-        children: [
-          Text(
-            '${products.length} Saved Products',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primary,
-            ),
-          ),
-
-          SizedBox(height: 20),
-
-          if (products.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 60),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    size: 60,
-                    color: AppColors.lightText,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Your wishlist is empty.',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: AppColors.text,
+      body: stream == null
+          ? loginNeeded()
+          : StreamBuilder<QuerySnapshot>(
+              stream: stream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: ColorResources.primary,
                     ),
-                  ),
-                ],
-              ),
-            ),
+                  );
+                }
 
-          ...List.generate(products.length, productCard),
-        ],
-      ),
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Text(
+                        'Could not load your wishlist.\n${snapshot.error}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: ColorResources.text),
+                      ),
+                    ),
+                  );
+                }
+
+                final docs = snapshot.data?.docs ?? [];
+
+                return ListView(
+                  padding: EdgeInsets.all(16),
+                  children: [
+                    Text(
+                      '${docs.length} Saved Products',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: ColorResources.primary,
+                      ),
+                    ),
+
+                    SizedBox(height: 20),
+
+                    if (docs.isEmpty)
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 60),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.favorite_border,
+                              size: 60,
+                              color: ColorResources.lightText,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Your wishlist is empty.',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: ColorResources.text,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    ...docs.map(
+                      (doc) => productCard(
+                        doc.id,
+                        doc.data() as Map<String, dynamic>,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
     );
   }
 }
