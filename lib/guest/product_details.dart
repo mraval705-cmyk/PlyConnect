@@ -1,6 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../login.dart';
 import '../resources/color_resources.dart';
+import '../user/order_summary.dart';
+import '../user/wishlist.dart';
 import '../user/my_orders.dart';
 import '../user/my_profile.dart';
 import '../user/wishlist.dart';
@@ -28,6 +32,76 @@ class ProductDetailsPage extends StatelessWidget {
   void showMessage(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+
+  // True when somebody is browsing without an account. Only a guest is asked
+  // to login, a signed in user never sees the login button.
+  bool get isGuest {
+    return FirebaseAuth.instance.currentUser == null;
+  }
+
+  // A signed in user adds the product to their own wishlist in Firestore.
+  Future<void> addToWishlist(BuildContext context) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      return;
+    }
+
+    final name = product['name'] ?? '';
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('wishlist')
+          .doc(name)
+          .set({
+        'name': name,
+        'brand': '${product['brand'] ?? ''}',
+        'category': '${product['category'] ?? ''}',
+        'thickness': '${product['thickness'] ?? ''}',
+        'price': '${product['price'] ?? 0}',
+        'image': '${product['image'] ?? ''}',
+        'addedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (error) {
+      if (!context.mounted) return;
+      showMessage(context, 'Could not save the product. $error');
+      return;
+    }
+
+    if (!context.mounted) return;
+    showMessage(context, '$name added to your wishlist.');
+  }
+
+  // A guest is sent to login, a signed in user goes to the wishlist screen.
+  void openWishlistOrLogin(BuildContext context) {
+    if (isGuest) {
+      openLogin(context);
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const WishlistPage(),
+        ),
+      );
+    }
+  }
+
+  // Only a signed in user can send an order request to the shop.
+  void placeOrderOrLogin(BuildContext context) {
+    if (isGuest) {
+      openLogin(context);
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const OrderSummaryPage(),
+      ),
     );
   }
 
@@ -97,11 +171,16 @@ class ProductDetailsPage extends StatelessWidget {
         backgroundColor: ColorResources.background,
         foregroundColor: ColorResources.primary,
         actions: [
+          // A signed in user saves directly, a guest is asked to login first.
           IconButton(
-            tooltip: 'Login to save product',
+            tooltip: isGuest ? 'Login to save product' : 'Save to wishlist',
             icon: Icon(Icons.favorite_border),
             onPressed: () {
-              openLogin(context);
+              if (isGuest) {
+                openLogin(context);
+              } else {
+                addToWishlist(context);
+              }
             },
           ),
         ],
@@ -265,11 +344,13 @@ class ProductDetailsPage extends StatelessWidget {
 
             SizedBox(height: 12),
 
+            // Guest: asks for login. Signed in: sends the order request to
+            // the shop straight away.
             SizedBox(
               height: 56,
               child: ElevatedButton(
                 onPressed: () {
-                  openLogin(context);
+                  placeOrderOrLogin(context);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: ColorResources.primary,
@@ -279,7 +360,7 @@ class ProductDetailsPage extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'Login to Place Order',
+                  isGuest ? 'Login to Place Order' : 'Send Order Request',
                   style: TextStyle(fontSize: 16),
                 ),
               ),
@@ -287,14 +368,16 @@ class ProductDetailsPage extends StatelessWidget {
 
             SizedBox(height: 16),
 
-            Text(
-              'Please login to place an order or save products.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: ColorResources.lightText,
+            // The note is only useful for a guest.
+            if (isGuest)
+              Text(
+                'Please login to place an order or save products.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: ColorResources.lightText,
+                ),
               ),
-            ),
 
             SizedBox(height: 24),
           ],

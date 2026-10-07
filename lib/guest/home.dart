@@ -5,7 +5,9 @@ import '../resources/color_resources.dart';
 import '../user/my_orders.dart';
 import '../user/my_profile.dart';
 import '../user/wishlist.dart';
+import 'brand_products.dart';
 import 'browse_products.dart';
+import 'categories_page.dart';
 import 'product_details.dart';
 
 class GuestHomePage extends StatefulWidget {
@@ -33,13 +35,6 @@ class _GuestHomePageState extends State<GuestHomePage> {
     Icons.style_outlined,
     Icons.grid_view,
     Icons.layers_outlined,
-  ];
-
-  final brands = [
-    'CENTURY',
-    'GREENPLY',
-    'KITPLY',
-    'DURACORE',
   ];
 
   // The category chips are still a fixed list, because they describe the
@@ -290,9 +285,14 @@ class _GuestHomePageState extends State<GuestHomePage> {
                 heading('Categories'),
                 TextButton(
                   onPressed: () {
-                    setState(() {
-                      selectedCategory = 'All';
-                    });
+                    // "View All" opens the full category list, which is
+                    // read from the same Firestore collection.
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CategoriesPage(),
+                      ),
+                    );
                   },
                   child: Text(
                     'View All',
@@ -313,6 +313,8 @@ class _GuestHomePageState extends State<GuestHomePage> {
                     padding: EdgeInsets.only(right: 12),
                     child: InkWell(
                       onTap: () {
+                        // Tapping a category filters the products below it,
+                        // so the matching products appear on the same screen.
                         setState(() {
                           selectedCategory = categories[index];
                         });
@@ -419,31 +421,66 @@ class _GuestHomePageState extends State<GuestHomePage> {
             heading('Trusted Brands'),
             SizedBox(height: 12),
 
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: brands.map((brand) {
-                  return Container(
-                    margin: EdgeInsets.only(right: 12),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 18,
-                    ),
-                    decoration: BoxDecoration(
-                      color: ColorResources.white,
-                      border: Border.all(color: ColorResources.border),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      brand,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: ColorResources.primary,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+            // Brands come from Firestore, so tapping one opens that brand's
+            // own product list.
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('brands')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return SizedBox.shrink();
+                }
+
+                final docs = snapshot.data?.docs ?? [];
+
+                if (docs.isEmpty) {
+                  return SizedBox.shrink();
+                }
+
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: docs.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final brandName = '${data['name'] ?? ''}';
+
+                      return InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BrandProductsPage(
+                                brandName: brandName,
+                              ),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          margin: EdgeInsets.only(right: 12),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 18,
+                          ),
+                          decoration: BoxDecoration(
+                            color: ColorResources.white,
+                            border: Border.all(color: ColorResources.border),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            brandName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: ColorResources.primary,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                );
+              },
             ),
 
             SizedBox(height: 24),

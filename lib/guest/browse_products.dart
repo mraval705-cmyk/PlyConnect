@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../resources/color_resources.dart';
 import '../user/my_orders.dart';
@@ -25,6 +26,41 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  // A guest is asked to login. A signed in user saves the product into their
+  // own wishlist straight away.
+  Future<void> saveToWishlist(Map<String, dynamic> product) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      showMessage('Please log in to save products.');
+      return;
+    }
+
+    final name = '${product['name'] ?? ''}';
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('wishlist')
+          .doc('$name')
+          .set({
+        'name': name,
+        'brand': '${product['brand'] ?? ''}',
+        'category': '${product['category'] ?? ''}',
+        'thickness': '${product['thickness'] ?? ''}',
+        'price': '${product['price'] ?? 0}',
+        'image': '${product['image'] ?? ''}',
+        'addedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (error) {
+      showMessage('Could not save the product. $error');
+      return;
+    }
+
+    showMessage('$name added to your wishlist.');
   }
 
   void openPage(Widget page) {
@@ -171,7 +207,7 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
                       color: ColorResources.primary,
                     ),
                     onPressed: () {
-                      showMessage('Please log in to save products.');
+                      saveToWishlist(product);
                     },
                   ),
                 ),

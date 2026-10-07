@@ -5,6 +5,7 @@ import 'manage_categories.dart';
 import 'manage_orders.dart';
 import 'manage_products.dart';
 import 'manage_customers.dart';
+import 'local_products.dart';
 import 'stock_management.dart';
 import 'admin_profile.dart';
 
@@ -167,6 +168,12 @@ class AdminDashboardPage extends StatelessWidget {
               'Orders',
               Icons.receipt_long_outlined,
               ManageOrdersPage(),
+            ),
+            menuCard(
+              context,
+              'Local Products',
+              Icons.save_outlined,
+              LocalProductsPage(),
             ),
             menuCard(
               context,

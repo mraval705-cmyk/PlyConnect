@@ -40,6 +40,10 @@ dependencies:
   firebase_auth: ^6.1.2
   cloud_firestore: ^6.1.1
 
+  # Stores the registered list on the phone, so the data is still there
+  # after the app is closed.
+  shared_preferences: ^2.5.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
