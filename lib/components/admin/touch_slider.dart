@@ -39,7 +39,12 @@ class _TouchSliderState extends State<TouchSlider> {
   double valueAt(double x) {
     if (barWidth <= 0) return widget.min;
 
-    final part = (x / barWidth).clamp(0.0, 1.0);
+    // The handle sits in the middle, so the bar inside it starts 12 from the
+    // left and is 24 shorter at the right.
+    final usable = barWidth - 24;
+    if (usable <= 0) return widget.min;
+
+    final part = ((x - 12) / usable).clamp(0.0, 1.0);
     final raw = widget.min + part * (widget.max - widget.min);
 
     // Rounded to a whole number, because sheets are never in decimals.
@@ -47,113 +52,125 @@ class _TouchSliderState extends State<TouchSlider> {
   }
 
   void handleTouch(double x) {
-    final next = valueAt(x);
-    widget.onChanged(next);
+    widget.onChanged(valueAt(x));
   }
 
   @override
   Widget build(BuildContext context) {
-    final span = widget.max - widget.min;
-    final filled = span == 0 ? 0.0 : (widget.value - widget.min) / span;
-    final filledWidth = barWidth * filled.clamp(0.0, 1.0);
-
     return LayoutBuilder(
       builder: (context, constraints) {
         barWidth = constraints.maxWidth;
 
-        // The handle sits at the end of the filled part, and the value box
-        // is drawn above it.
-        final handleLeft = (filledWidth - 12).clamp(0.0, barWidth - 24);
+        final span = widget.max - widget.min;
+        final filled = span == 0 ? 0.0 : (widget.value - widget.min) / span;
+        final filledWidth = barWidth * filled.clamp(0.0, 1.0);
 
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // The value box above the handle.
-            Positioned(
-              left: handleLeft,
-              bottom: 34,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: ColorResources.primary,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${widget.value.round()} ${widget.suffix}'.trim(),
-                  style: const TextStyle(
-                    color: ColorResources.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+        // The handle is 24 wide, so it can only move between 0 and the bar
+        // width minus 24. If the bar is not measured yet the limit is 0,
+        // because clamp() throws when the lower end is bigger than the
+        // upper end.
+        final lastPosition = (barWidth - 24).clamp(0.0, double.infinity);
+        final handleLeft = (filledWidth - 12).clamp(0.0, lastPosition);
+
+        // The box above the handle is pushed in from the right when the
+        // handle is close to the end, so it never falls off the screen.
+        const boxWidth = 74.0;
+        final boxLeft = (handleLeft + 12 - boxWidth / 2)
+            .clamp(0.0, (barWidth - boxWidth).clamp(0.0, double.infinity));
+
+        return SizedBox(
+          height: 62,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // The value box above the handle.
+              Positioned(
+                left: boxLeft,
+                top: 0,
+                child: Container(
+                  width: boxWidth,
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: ColorResources.primary,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${widget.value.round()} ${widget.suffix}'.trim(),
+                    style: const TextStyle(
+                      color: ColorResources.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // The bar and the round handle.
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 12,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
+              // The bar and the round handle.
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 34,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
 
-                // A single tap jumps straight to that spot.
-                onTapDown: (details) {
-                  handleTouch(details.localPosition.dx);
-                },
+                  // A single tap jumps straight to that spot.
+                  onTapDown: (details) {
+                    handleTouch(details.localPosition.dx);
+                  },
 
-                // Dragging keeps following the finger.
-                onHorizontalDragUpdate: (details) {
-                  handleTouch(details.localPosition.dx);
-                },
+                  // Dragging keeps following the finger.
+                  onHorizontalDragUpdate: (details) {
+                    handleTouch(details.localPosition.dx);
+                  },
 
-                child: SizedBox(
-                  height: 26,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      // The empty part of the bar.
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: ColorResources.border,
-                          borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    height: 26,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        // The empty part of the bar.
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: ColorResources.border,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                      ),
 
-                      // The filled part of the bar.
-                      Container(
-                        width: filledWidth,
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: ColorResources.primary,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-
-                      // The round handle.
-                      Positioned(
-                        left: handleLeft,
-                        child: Container(
-                          width: 24,
-                          height: 24,
+                        // The filled part of the bar.
+                        Container(
+                          width: filledWidth,
+                          margin: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
                             color: ColorResources.primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: ColorResources.white,
-                              width: 3,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+
+                        // The round handle.
+                        Positioned(
+                          left: handleLeft,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: ColorResources.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: ColorResources.white,
+                                width: 3,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
