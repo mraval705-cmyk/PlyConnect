@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../components/admin/touch_slider.dart';
 import '../resources/color_resources.dart';
 import '../resources/sample_data.dart';
 
@@ -12,11 +13,8 @@ class StockManagementPage extends StatefulWidget {
 class _StockManagementPageState extends State<StockManagementPage> {
   String search = '';
 
-  // The slider decides how low the stock has to be before it is called low.
+  // The bar decides how low the stock has to be before it is called low.
   double lowLimit = 20;
-
-  // When true only the items under the slider are shown.
-  bool showOnlyLow = false;
 
   // A working copy of the sample list, so the count can be changed while the
   // app is running.
@@ -103,6 +101,44 @@ class _StockManagementPageState extends State<StockManagementPage> {
     });
   }
 
+  /// The +10 and -10 buttons. They sit in the card itself, so they are always
+  /// visible without opening anything.
+  Widget buildCountButtons(Map<String, dynamic> item) {
+    final count = item['stock'] as int;
+
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: count == 0
+                ? null
+                : () {
+                    changeBy(item, -10);
+                    showMessage('${item['name']} reduced to ${count - 10}.');
+                  },
+            icon: const Icon(Icons.remove, size: 18),
+            label: const Text('10'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () {
+              changeBy(item, 10);
+              showMessage('${item['name']} now has ${count + 10}.');
+            },
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('10'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ColorResources.primary,
+              foregroundColor: ColorResources.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   /// The box that opens when a stock item is tapped.
   Widget buildDetails(Map<String, dynamic> item) {
     return Padding(
@@ -148,25 +184,13 @@ class _StockManagementPageState extends State<StockManagementPage> {
 
           const SizedBox(height: 12),
 
-          Row(
-            children: [
-              OutlinedButton.icon(
-                onPressed: () => changeBy(item, -10),
-                icon: const Icon(Icons.remove),
-                label: const Text('10'),
-              ),
-              const SizedBox(width: 10),
-              OutlinedButton.icon(
-                onPressed: () => changeBy(item, 10),
-                icon: const Icon(Icons.add),
-                label: const Text('10'),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: () => editCount(item),
-                child: const Text('Edit'),
-              ),
-            ],
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => editCount(item),
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('Type a new count'),
+            ),
           ),
         ],
       ),
@@ -259,14 +283,19 @@ class _StockManagementPageState extends State<StockManagementPage> {
             ],
           ),
 
-          // ExpansionTile opens the extra controls of the item.
+          const SizedBox(height: 12),
+
+          // The +10 and -10 buttons are always visible.
+          buildCountButtons(item),
+
+          // ExpansionTile opens the extra details of the item.
           Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
               tilePadding: EdgeInsets.zero,
               childrenPadding: EdgeInsets.zero,
               title: const Text(
-                'Update stock',
+                'More details',
                 style: TextStyle(
                   fontSize: 12,
                   color: ColorResources.primary,
@@ -280,11 +309,12 @@ class _StockManagementPageState extends State<StockManagementPage> {
     );
   }
 
-  /// The slider and the checkbox that filter the list.
+  /// The bar that sets the low stock limit. Touching anywhere jumps the
+  /// handle to that spot and shows the value above it.
   Widget buildFilterBox() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       decoration: BoxDecoration(
         color: ColorResources.white,
         borderRadius: BorderRadius.circular(12),
@@ -303,52 +333,46 @@ class _StockManagementPageState extends State<StockManagementPage> {
                 ),
               ),
               const Spacer(),
-              Text(
-                '${lowLimit.round()} sheets',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: ColorResources.primary,
-                ),
+              // The two small buttons are easier than fine dragging.
+              IconButton(
+                tooltip: 'Less',
+                onPressed: lowLimit <= 5
+                    ? null
+                    : () => setLowLimit(lowLimit - 5),
+                icon: const Icon(Icons.remove_circle_outline),
+              ),
+              IconButton(
+                tooltip: 'More',
+                onPressed: lowLimit >= 50
+                    ? null
+                    : () => setLowLimit(lowLimit + 5),
+                icon: const Icon(Icons.add_circle_outline),
               ),
             ],
           ),
 
-          // Slider chooses the limit.
-          Slider(
+          const SizedBox(height: 18),
+
+          TouchSlider(
             value: lowLimit,
             min: 5,
             max: 50,
-            divisions: 9,
-            label: '${lowLimit.round()} sheets',
-            activeColor: ColorResources.primary,
-            onChanged: (value) {
-              setState(() {
-                lowLimit = value;
-                for (final item in items) {
-                  refreshStatus(item);
-                }
-              });
-            },
-          ),
-
-          // Checkbox shows only the items that need restocking.
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            value: showOnlyLow,
-            activeColor: ColorResources.primary,
-            title: const Text(
-              'Show low stock only',
-              style: TextStyle(fontSize: 13),
-            ),
-            onChanged: (value) {
-              setState(() {
-                showOnlyLow = value ?? false;
-              });
-            },
+            suffix: 'sheets',
+            onChanged: setLowLimit,
           ),
         ],
       ),
     );
+  }
+
+  /// Keeps the new limit and works out the status of every item again.
+  void setLowLimit(double value) {
+    setState(() {
+      lowLimit = value.clamp(5, 50);
+      for (final item in items) {
+        refreshStatus(item);
+      }
+    });
   }
 
   @override
@@ -357,13 +381,7 @@ class _StockManagementPageState extends State<StockManagementPage> {
     final visible = items.where((item) {
       final name = '${item['name']}'.toLowerCase();
       final brand = '${item['brand']}'.toLowerCase();
-      final matchesSearch = name.contains(search) || brand.contains(search);
-
-      final matchesLow = !showOnlyLow ||
-          (item['stock'] as int) < lowLimit ||
-          item['status'] == 'Out of Stock';
-
-      return matchesSearch && matchesLow;
+      return name.contains(search) || brand.contains(search);
     }).toList();
 
     return Scaffold(

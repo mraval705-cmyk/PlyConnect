@@ -23,11 +23,17 @@ class _MyProfilePageState extends State<MyProfilePage> {
     );
   }
 
-  void openPage(Widget page) {
-    Navigator.push(
+  /// Waits for the opened page to close and then refreshes this screen, so a
+  /// change made in Edit Profile or Edit Address is shown here at once.
+  Future<void> openPage(Widget page) async {
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => page),
     );
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   String get firstLetter {

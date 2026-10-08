@@ -16,6 +16,12 @@ class _ManageCustomersPageState extends State<ManageCustomersPage> {
   final List<Map<String, dynamic>> customers =
       List<Map<String, dynamic>>.from(SampleData.customers);
 
+  @override
+  void initState() {
+    super.initState();
+    data = loadCustomers();
+  }
+
   String initialOf(String name) {
     if (name.isEmpty) return '?';
     return name[0].toUpperCase();
@@ -34,18 +40,26 @@ class _ManageCustomersPageState extends State<ManageCustomersPage> {
     );
   }
 
+  /// The pending load. It is kept in a field because build() runs many times,
+  /// and a new future on every build would keep the screen loading forever.
+  Future<List<Map<String, dynamic>>>? data;
+
   /// Pretends the list is being fetched, the way a real database call would
   /// take a moment. Later the same function will hold a Firestore query.
   Future<List<Map<String, dynamic>>> loadCustomers() {
     return Future<List<Map<String, dynamic>>>.delayed(
-      const Duration(milliseconds: 500),
+      const Duration(milliseconds: 400),
       () => customers,
     );
   }
 
   /// Called by RefreshIndicator when the list is pulled down.
   Future<void> reload() async {
-    await loadCustomers();
+    setState(() {
+      data = loadCustomers();
+    });
+
+    await data;
     showMessage('Customer list refreshed.');
   }
 
@@ -233,14 +247,37 @@ class _ManageCustomersPageState extends State<ManageCustomersPage> {
               // is already there, so the wait is only a short moment to show
               // the loading ring, the same way live data would behave.
               child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: loadCustomers(),
+                future: data,
                 builder: (context, snapshot) {
                   // While the data is coming, the ring keeps turning.
                   if (snapshot.connectionState != ConnectionState.done) {
                     return const Center(child: LoadingRing());
                   }
 
+                  // The list that came from the load is only used as the
+                  // source, the cards are always built from the filtered
+                  // list, so the search really hides the other customers.
                   final list = snapshot.data ?? customers;
+                  final cards = visible.isEmpty
+                      ? const [
+                          Padding(
+                            padding: EdgeInsets.only(top: 60),
+                            child: Center(
+                              child: Text(
+                                'No customer found.',
+                                style: TextStyle(
+                                  color: ColorResources.text,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ]
+                      : list
+                          .where((item) =>
+                              visible.any((shown) =>
+                                  shown['id'] == item['id']))
+                          .map(customerCard)
+                          .toList();
 
                   return RefreshIndicator(
                     onRefresh: reload,
@@ -249,21 +286,7 @@ class _ManageCustomersPageState extends State<ManageCustomersPage> {
                     child: ListView(
                       padding: const EdgeInsets.all(16),
                       physics: const AlwaysScrollableScrollPhysics(),
-                      children: visible.isEmpty
-                          ? const [
-                              Padding(
-                                padding: EdgeInsets.only(top: 60),
-                                child: Center(
-                                  child: Text(
-                                    'No customer found.',
-                                    style: TextStyle(
-                                      color: ColorResources.text,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ]
-                          : list.map(customerCard).toList(),
+                      children: cards,
                     ),
                   );
                 },

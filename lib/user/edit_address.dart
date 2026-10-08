@@ -54,10 +54,25 @@ class _EditAddressPageState extends State<EditAddressPage> {
     return null;
   }
 
+  /// Checks every field, joins the parts into one address, writes it into the
+  /// shared profile map and goes back, so the profile screen shows it.
   void saveAddress() {
-    if (_formKey.currentState!.validate()) {
-      showMessage('Address details are valid. Saved to the sample list.');
+    if (!_formKey.currentState!.validate()) {
+      return;
     }
+
+    final address = [
+      houseController.text.trim(),
+      areaController.text.trim(),
+      cityController.text.trim(),
+      stateController.text.trim(),
+      pincodeController.text.trim(),
+      landmarkController.text.trim(),
+    ].where((part) => part.isNotEmpty).join(', ');
+
+    SampleData.updateProfile(address: address);
+
+    Navigator.pop(context, true);
   }
 
   @override

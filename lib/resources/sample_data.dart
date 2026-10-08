@@ -9,7 +9,7 @@ library;
 class SampleData {
   // ---------------------------------------------------------------- products
 
-  static const List<Map<String, dynamic>> products = [
+  static final List<Map<String, dynamic>> products = [
     {
       'id': 'P001',
       'name': '18mm Commercial Ply',
@@ -122,7 +122,7 @@ class SampleData {
 
   // -------------------------------------------------------------- categories
 
-  static const List<Map<String, dynamic>> categories = [
+  static final List<Map<String, dynamic>> categories = [
     {
       'id': 'C001',
       'name': 'MR Grade',
@@ -147,7 +147,7 @@ class SampleData {
 
   // ------------------------------------------------------------------ brands
 
-  static const List<Map<String, dynamic>> brands = [
+  static final List<Map<String, dynamic>> brands = [
     {
       'id': 'B001',
       'name': 'Greenply',
@@ -180,7 +180,7 @@ class SampleData {
 
   // ------------------------------------------------------------------ orders
 
-  static const List<Map<String, dynamic>> orders = [
+  static final List<Map<String, dynamic>> orders = [
     {
       'id': 'O001',
       'orderId': 'ORD-98765',
@@ -241,7 +241,7 @@ class SampleData {
 
   // ----------------------------------------------------------------- customers
 
-  static const List<Map<String, dynamic>> customers = [
+  static final List<Map<String, dynamic>> customers = [
     {
       'id': 'U001',
       'name': 'Arjun Sharma',
@@ -274,7 +274,7 @@ class SampleData {
 
   // ------------------------------------------------------------------- stock
 
-  static const List<Map<String, dynamic>> stock = [
+  static final List<Map<String, dynamic>> stock = [
     {
       'id': 'S001',
       'name': '18mm Commercial Ply',
@@ -319,7 +319,7 @@ class SampleData {
 
   // ---------------------------------------------------------------- wishlist
 
-  static const List<Map<String, dynamic>> wishlist = [
+  static final List<Map<String, dynamic>> wishlist = [
     {
       'id': 'W001',
       'name': 'Club Prime Board',
@@ -351,7 +351,12 @@ class SampleData {
 
   // ------------------------------------------------------------- signed in user
 
-  static const Map<String, dynamic> currentUser = {
+  /// The signed-in user.
+  ///
+  /// It is `final` and not `const` on purpose. A `const` map cannot be
+  /// changed, so saving the Edit Profile form would fail. Because this map
+  /// stays in the same place, every screen reads the new value at once.
+  static final Map<String, dynamic> currentUser = {
     'name': 'Arjun Sharma',
     'email': 'arjun.sharma@email.com',
     'mobile': '9876543210',
@@ -359,17 +364,40 @@ class SampleData {
         '123, 4th Floor, Hemkunt Tower, Nehru Place,\nNew Delhi - 110019',
   };
 
-  /// The sample user, split into plain text fields so a screen can copy it
-  /// into a TextEditingController without any extra work.
-  static const String nameText = 'Arjun Sharma';
-  static const String emailText = 'arjun.sharma@email.com';
-  static const String mobileText = '9876543210';
-  static const String addressText =
-      '123, 4th Floor, Hemkunt Tower, Nehru Place,\nNew Delhi - 110019';
+  /// The same user, one field at a time, so a screen can copy the value
+  /// straight into a TextEditingController.
+  static String get nameText => '${currentUser['name']}';
+
+  static String get emailText => '${currentUser['email']}';
+
+  static String get mobileText => '${currentUser['mobile']}';
+
+  static String get addressText => '${currentUser['address']}';
+
+  /// Saves the Edit Profile form into the same map.
+  ///
+  /// Only the fields that were passed are changed, so the Edit Address form
+  /// does not empty the name.
+  static void updateProfile({
+    String? name,
+    String? email,
+    String? mobile,
+    String? address,
+  }) {
+    if (name != null) currentUser['name'] = name;
+    if (email != null) currentUser['email'] = email;
+    if (mobile != null) currentUser['mobile'] = mobile;
+    if (address != null) currentUser['address'] = address;
+  }
 
   /// Products of one brand, used by the brand page.
+  ///
+  /// A product writes the brand in capitals while the brand list writes it in
+  /// normal case, so both sides are lowered before comparing.
   static List<Map<String, dynamic>> productsOfBrand(String brand) {
-    return products.where((item) => item['brand'] == brand).toList();
+    return products.where((item) {
+      return '${item['brand']}'.toLowerCase() == brand.toLowerCase();
+    }).toList();
   }
 
   /// Orders of one customer, used by the customer details page.

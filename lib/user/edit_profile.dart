@@ -18,6 +18,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final emailController = TextEditingController(text: SampleData.emailText);
   final mobileController = TextEditingController(text: SampleData.mobileText);
 
+  /// Rebuilds when the typed name changes, so the circle letter updates too.
+  void onNameChanged(String value) {
+    setState(() {});
+  }
+
   void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -44,11 +49,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  /// The form is only checked, because nothing is sent to a server.
+  /// Checks the form, writes the values into the shared profile map, and goes
+  /// back to the profile screen so the new details are visible there.
   void saveProfile() {
-    if (_formKey.currentState!.validate()) {
-      showMessage('Profile details are valid. Saved to the sample list.');
+    if (!_formKey.currentState!.validate()) {
+      return;
     }
+
+    SampleData.updateProfile(
+      name: nameController.text.trim(),
+      email: emailController.text.trim(),
+      mobile: mobileController.text.trim(),
+    );
+
+    Navigator.pop(context, true);
   }
 
   @override
@@ -119,6 +133,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: nameController,
                   textCapitalization: TextCapitalization.words,
                   decoration: fieldDesign('Full Name', Icons.person_outline),
+                  onChanged: onNameChanged,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter your name';
