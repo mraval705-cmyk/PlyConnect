@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import '../guest/welcome.dart';
 import '../resources/color_resources.dart';
 import 'edit_admin_profile.dart';
+import 'manage_orders.dart';
+import 'manage_products.dart';
+import 'reports_page.dart';
 
 class AdminProfilePage extends StatelessWidget {
   const AdminProfilePage({super.key});
@@ -54,8 +58,9 @@ class AdminProfilePage extends StatelessWidget {
     IconData icon,
     String title,
     String message,
-    Widget? page,
-  ) {
+    Widget? page, {
+    VoidCallback? onTap,
+  }) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: ColorResources.primary),
@@ -68,7 +73,11 @@ class AdminProfilePage extends StatelessWidget {
         color: ColorResources.lightText,
       ),
       onTap: () {
-        if (page == null) {
+        if (onTap != null) {
+          onTap();
+        } else if (title == 'Logout') {
+          logout(context);
+        } else if (page == null) {
           showMessage(context, message);
         } else {
           Navigator.push(
@@ -76,6 +85,81 @@ class AdminProfilePage extends StatelessWidget {
             MaterialPageRoute(builder: (context) => page),
           );
         }
+      },
+    );
+  }
+
+  /// Sends the admin back to the Welcome screen and clears the pages that
+  /// were opened before it, so the back button does not return here.
+  void logout(BuildContext context) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const WelcomePage()),
+      (route) => false,
+    );
+  }
+
+  /// A small form with two fields and a check that the new password matches.
+  void openChangePassword(BuildContext context) {
+    final first = TextEditingController();
+    final second = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: ColorResources.background,
+          title: const Text('Change Password'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: first,
+                obscureText: true,
+                decoration:
+                    const InputDecoration(labelText: 'New password'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: second,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm password',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (first.text.length < 6) {
+                  showMessage(
+                    context,
+                    'Password must be at least 6 letters.',
+                  );
+                  return;
+                }
+
+                if (first.text != second.text) {
+                  showMessage(context, 'Both passwords are not the same.');
+                  return;
+                }
+
+                Navigator.pop(dialogContext);
+                showMessage(context, 'Password changed.');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ColorResources.primary,
+                foregroundColor: ColorResources.white,
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        );
       },
     );
   }
@@ -205,7 +289,7 @@ class AdminProfilePage extends StatelessWidget {
                       Icons.inventory_2_outlined,
                       'Manage Products',
                       'Manage Products will be connected later.',
-                      null,
+                      const ManageProductsPage(),
                     ),
                     Divider(height: 1, color: ColorResources.border),
                     menuItem(
@@ -213,7 +297,15 @@ class AdminProfilePage extends StatelessWidget {
                       Icons.receipt_long_outlined,
                       'Manage Orders',
                       'Manage Orders will be connected later.',
-                      null,
+                      const ManageOrdersPage(),
+                    ),
+                    Divider(height: 1, color: ColorResources.border),
+                    menuItem(
+                      context,
+                      Icons.bar_chart_outlined,
+                      'Sales Report',
+                      'Sales Report will be connected later.',
+                      const ReportsPage(),
                     ),
                   ],
                 ),
@@ -230,6 +322,7 @@ class AdminProfilePage extends StatelessWidget {
                       'Change Password',
                       'Change Password will be connected later.',
                       null,
+                      onTap: () => openChangePassword(context),
                     ),
                     Divider(height: 1, color: ColorResources.border),
                     menuItem(

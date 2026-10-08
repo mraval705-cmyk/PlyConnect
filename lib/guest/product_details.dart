@@ -1,14 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../login.dart';
 import '../resources/color_resources.dart';
 import '../user/order_summary.dart';
-import '../user/wishlist.dart';
-import '../user/my_orders.dart';
-import '../user/my_profile.dart';
-import '../user/wishlist.dart';
 import 'browse_products.dart';
+import 'compare_products.dart';
 import 'contact_shop.dart';
 import 'select_product.dart';
 
@@ -20,11 +15,18 @@ class ProductDetailsPage extends StatelessWidget {
     required this.product,
   });
 
+  void openPage(BuildContext context, Widget page) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => page),
+    );
+  }
+
   void openLogin(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LoginPage(),
+        builder: (context) => const LoginPage(),
       ),
     );
   }
@@ -35,122 +37,23 @@ class ProductDetailsPage extends StatelessWidget {
     );
   }
 
-  // True when somebody is browsing without an account. Only a guest is asked
-  // to login, a signed in user never sees the login button.
-  bool get isGuest {
-    return FirebaseAuth.instance.currentUser == null;
-  }
-
-  // A signed in user adds the product to their own wishlist in Firestore.
-  Future<void> addToWishlist(BuildContext context) async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-
-    if (currentUser == null) {
-      return;
-    }
-
-    final name = product['name'] ?? '';
-
-    try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .collection('wishlist')
-          .doc(name)
-          .set({
-        'name': name,
-        'brand': '${product['brand'] ?? ''}',
-        'category': '${product['category'] ?? ''}',
-        'thickness': '${product['thickness'] ?? ''}',
-        'price': '${product['price'] ?? 0}',
-        'image': '${product['image'] ?? ''}',
-        'addedAt': FieldValue.serverTimestamp(),
-      });
-    } catch (error) {
-      if (!context.mounted) return;
-      showMessage(context, 'Could not save the product. $error');
-      return;
-    }
-
-    if (!context.mounted) return;
-    showMessage(context, '$name added to your wishlist.');
-  }
-
-  // A guest is sent to login, a signed in user goes to the wishlist screen.
-  void openWishlistOrLogin(BuildContext context) {
-    if (isGuest) {
-      openLogin(context);
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const WishlistPage(),
-        ),
-      );
-    }
-  }
-
-  // Only a signed in user can send an order request to the shop.
-  void placeOrderOrLogin(BuildContext context) {
-    if (isGuest) {
-      openLogin(context);
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const OrderSummaryPage(),
-      ),
-    );
-  }
-
-  // The Compare button goes to the Select Product screen first, because the
-  // design asks the user to pick one more product before the comparison.
-  void openCompare(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SelectProductPage(),
-      ),
-    );
-  }
-
-  void openContactShop(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ContactShopPage(),
-      ),
-    );
-  }
-
-  void openBrowse(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BrowseProductsPage(),
-      ),
-    );
-  }
-
   Widget specification(String title, String value) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: Text(
               title,
-              style: TextStyle(color: ColorResources.text),
+              style: const TextStyle(color: ColorResources.text),
             ),
           ),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: ColorResources.heading,
               ),
@@ -167,85 +70,80 @@ class ProductDetailsPage extends StatelessWidget {
       backgroundColor: ColorResources.background,
 
       appBar: AppBar(
-        title: Text('Product Details'),
+        title: const Text('Product Details'),
         backgroundColor: ColorResources.background,
         foregroundColor: ColorResources.primary,
         actions: [
-          // A signed in user saves directly, a guest is asked to login first.
           IconButton(
-            tooltip: isGuest ? 'Login to save product' : 'Save to wishlist',
-            icon: Icon(Icons.favorite_border),
+            tooltip: 'Save product',
+            icon: const Icon(Icons.favorite_border),
             onPressed: () {
-              if (isGuest) {
-                openLogin(context);
-              } else {
-                addToWishlist(context);
-              }
+              showMessage(context, 'Please log in to save products.');
             },
           ),
         ],
       ),
 
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.asset(
-                product['image']!,
+                product['image'] ?? 'assets/images/club_prime.png',
                 height: 240,
                 fit: BoxFit.cover,
               ),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             Text(
-              product['brand']!,
-              style: TextStyle(
+              '${product['brand']}',
+              style: const TextStyle(
                 fontSize: 12,
                 letterSpacing: 1,
                 color: ColorResources.lightText,
               ),
             ),
 
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
 
             Text(
-              product['name']!,
-              style: TextStyle(
+              '${product['name']}',
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: ColorResources.heading,
               ),
             ),
 
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
 
             Text(
               '${product['category']} Plywood',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 color: ColorResources.text,
               ),
             ),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             Text(
-              product['price']!,
-              style: TextStyle(
+              '${product['price']}',
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: ColorResources.primary,
               ),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-            Text(
+            const Text(
               'Description',
               style: TextStyle(
                 fontSize: 18,
@@ -254,24 +152,24 @@ class ProductDetailsPage extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
 
             Text(
               '${product['thickness']} ${product['category']} plywood '
               'from ${product['brand']}. '
               'Contact the shop for available sheet sizes, '
               'stock and detailed specifications.',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 height: 1.6,
                 color: ColorResources.text,
               ),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             Container(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: ColorResources.white,
                 borderRadius: BorderRadius.circular(16),
@@ -280,7 +178,7 @@ class ProductDetailsPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Technical Specifications',
                     style: TextStyle(
                       fontSize: 18,
@@ -291,66 +189,69 @@ class ProductDetailsPage extends StatelessWidget {
 
                   Divider(color: ColorResources.border),
 
-                  specification('Brand', product['brand']!),
-                  specification('Category', product['category']!),
-                  specification('Thickness', product['thickness']!),
+                  specification('Brand', '${product['brand']}'),
+                  specification('Category', '${product['category']}'),
+                  specification('Thickness', '${product['thickness']}'),
                   specification('Sheet size', 'Confirm with shop'),
                   specification('Warranty', 'Confirm with shop'),
                 ],
               ),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      openCompare(context);
+                      // Compare goes to the Select Product screen first,
+                      // because one more product has to be picked.
+                      openPage(context, const SelectProductPage());
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: ColorResources.primary,
-                      side: BorderSide(color: ColorResources.primary),
-                      padding: EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: ColorResources.primary),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Text('Compare'),
+                    child: const Text('Compare'),
                   ),
                 ),
 
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
 
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      openContactShop(context);
+                      openPage(context, const ContactShopPage());
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: ColorResources.primary,
-                      side: BorderSide(color: ColorResources.primary),
-                      padding: EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: ColorResources.primary),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Text('Contact'),
+                    child: const Text('Contact'),
                   ),
                 ),
               ],
             ),
 
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-            // Guest: asks for login. Signed in: sends the order request to
-            // the shop straight away.
             SizedBox(
               height: 56,
               child: ElevatedButton(
                 onPressed: () {
-                  placeOrderOrLogin(context);
+                  // The order request needs an account, so a guest is sent
+                  // to the login screen first.
+                  openLogin(context);
+                  showMessage(context, 'Please login to place an order.');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: ColorResources.primary,
@@ -359,27 +260,25 @@ class ProductDetailsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(
-                  isGuest ? 'Login to Place Order' : 'Send Order Request',
+                child: const Text(
+                  'Login to Place Order',
                   style: TextStyle(fontSize: 16),
                 ),
               ),
             ),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-            // The note is only useful for a guest.
-            if (isGuest)
-              Text(
-                'Please login to place an order or save products.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: ColorResources.lightText,
-                ),
+            const Text(
+              'Please login to place an order or save products.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: ColorResources.lightText,
               ),
+            ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -393,34 +292,13 @@ class ProductDetailsPage extends StatelessWidget {
         selectedFontSize: 11,
         unselectedFontSize: 11,
         onTap: (index) {
-          if (index == 0) {
-            Navigator.pop(context);
-          } else if (index == 1) {
-            openBrowse(context);
-          } else if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const WishlistPage(),
-              ),
-            );
-          } else if (index == 3) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const MyOrdersPage(),
-              ),
-            );
+          if (index == 1) {
+            openPage(context, const BrowseProductsPage());
           } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const MyProfilePage(),
-              ),
-            );
+            openLogin(context);
           }
         },
-        items: [
+        items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             label: 'Home',

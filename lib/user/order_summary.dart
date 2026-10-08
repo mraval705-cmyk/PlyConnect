@@ -1,8 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../components/guest_page.dart';
 import '../resources/color_resources.dart';
+import '../resources/sample_data.dart';
 import 'payment.dart';
 
 class OrderSummaryPage extends StatefulWidget {
@@ -24,80 +23,6 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
 
   int quantity = 1;
   bool editAddress = false;
-  bool isSaving = false;
-
-  // Builds a readable order number such as ORD-48213.
-  String makeOrderId() {
-    return 'ORD-${DateTime.now().millisecondsSinceEpoch % 100000}';
-  }
-
-  String makeDate() {
-    final now = DateTime.now();
-    final day = now.day.toString().padLeft(2, '0');
-    final month = now.month.toString().padLeft(2, '0');
-    final year = now.year;
-    return '$day/$month/$year';
-  }
-
-  // Writes the order into the shared "orders" collection so that both the
-  // customer and the shop owner can see it.
-  Future<void> saveOrder() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-
-    if (currentUser == null) {
-      showMessage('Please login before placing an order.');
-      return;
-    }
-
-    setState(() {
-      isSaving = true;
-    });
-
-    final total = pricePerSquareFoot * sheetArea * quantity;
-
-    try {
-      await FirebaseFirestore.instance.collection('orders').add({
-        'orderId': makeOrderId(),
-        'userId': currentUser.uid,
-        'customerName': currentUser.displayName ?? currentUser.email ?? '',
-        'name': 'Club Prime Plywood',
-        'brand': 'CenturyPly',
-        'thickness': '19 mm',
-        'quantity': quantity,
-        'total': total.toStringAsFixed(2),
-        'address': addressController.text.trim(),
-        'instructions': instructionsController.text.trim(),
-        'status': 'Pending',
-        'date': makeDate(),
-        'image': 'assets/images/club_prime.png',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        isSaving = false;
-      });
-      showMessage('Could not place the order. $error');
-      return;
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      isSaving = false;
-    });
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PaymentPage(quantity: quantity),
-      ),
-    );
-  }
 
   final int pricePerSquareFoot = 145;
   final int sheetArea = 32;
@@ -110,7 +35,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
 
   Widget card(Widget child) {
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: ColorResources.white,
         borderRadius: BorderRadius.circular(16),
@@ -122,7 +47,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
 
   Widget priceRow(String label, String value, {bool bold = false}) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Expanded(
@@ -135,7 +60,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
               ),
             ),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Text(
             value,
             style: TextStyle(
@@ -158,6 +83,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
 
   @override
   Widget build(BuildContext context) {
+    // The maths is done here, so the total always matches the quantity.
     final sheetPrice = pricePerSquareFoot * sheetArea;
     final total = sheetPrice * quantity;
 
@@ -165,22 +91,12 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
       title: 'Order Summary',
       selectedIndex: 3,
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Demo order — sample product and address',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: ColorResources.lightText,
-                ),
-              ),
-
-              SizedBox(height: 12),
-
               card(
                 Column(
                   children: [
@@ -196,12 +112,12 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                             fit: BoxFit.cover,
                           ),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              const Text(
                                 'Club Prime Plywood',
                                 style: TextStyle(
                                   fontSize: 20,
@@ -209,13 +125,13 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                                   color: ColorResources.primary,
                                 ),
                               ),
-                              SizedBox(height: 8),
-                              Text(
+                              const SizedBox(height: 8),
+                              const Text(
                                 'CenturyPly • 19 mm • 8 × 4 ft',
                                 style: TextStyle(color: ColorResources.text),
                               ),
-                              SizedBox(height: 8),
-                              Text(
+                              const SizedBox(height: 8),
+                              const Text(
                                 '₹145 / sq.ft',
                                 style: TextStyle(color: ColorResources.primary),
                               ),
@@ -225,12 +141,12 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                       ],
                     ),
 
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Divider(color: ColorResources.border),
 
                     Row(
                       children: [
-                        Expanded(
+                        const Expanded(
                           child: Text(
                             'Quantity',
                             style: TextStyle(
@@ -248,12 +164,12 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                                   });
                                 }
                               : null,
-                          icon: Icon(Icons.remove_circle_outline),
+                          icon: const Icon(Icons.remove_circle_outline),
                           color: ColorResources.primary,
                         ),
                         Text(
                           '$quantity',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 18,
                             color: ColorResources.primary,
                           ),
@@ -267,7 +183,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                                   });
                                 }
                               : null,
-                          icon: Icon(Icons.add_circle_outline),
+                          icon: const Icon(Icons.add_circle_outline),
                           color: ColorResources.primary,
                         ),
                       ],
@@ -276,7 +192,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 ),
               ),
 
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
               card(
                 Column(
@@ -284,7 +200,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                   children: [
                     Row(
                       children: [
-                        Expanded(
+                        const Expanded(
                           child: Text(
                             'Delivery Address',
                             style: TextStyle(
@@ -307,7 +223,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                           },
                           child: Text(
                             editAddress ? 'Save' : 'Edit Address',
-                            style: TextStyle(color: ColorResources.primary),
+                            style: const TextStyle(color: ColorResources.primary),
                           ),
                         ),
                       ],
@@ -318,9 +234,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                         controller: addressController,
                         minLines: 2,
                         maxLines: 4,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           hintText: 'Enter your delivery address',
-                          border: OutlineInputBorder(),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -332,7 +247,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     else
                       Text(
                         addressController.text,
-                        style: TextStyle(
+                        style: const TextStyle(
                           height: 1.6,
                           color: ColorResources.text,
                         ),
@@ -341,9 +256,9 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 ),
               ),
 
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-              Text(
+              const Text(
                 'Delivery Instructions',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
@@ -351,7 +266,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 ),
               ),
 
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
 
               TextField(
                 controller: instructionsController,
@@ -365,18 +280,18 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: ColorResources.border),
+                    borderSide: const BorderSide(color: ColorResources.border),
                   ),
                 ),
               ),
 
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
               card(
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Price Details',
                       style: TextStyle(
                         fontSize: 18,
@@ -384,7 +299,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                         color: ColorResources.primary,
                       ),
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     priceRow(
                       'One Sheet (32 sq.ft)',
                       '₹${sheetPrice.toStringAsFixed(2)}',
@@ -400,10 +315,10 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                 ),
               ),
 
-              SizedBox(height: 28),
+              const SizedBox(height: 28),
 
               ElevatedButton(
-                onPressed: isSaving ? null : () {
+                onPressed: () {
                   if (!_formKey.currentState!.validate()) return;
 
                   if (addressController.text.trim().isEmpty) {
@@ -411,29 +326,35 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                     return;
                   }
 
-                  saveOrder();
+                  // The order is not sent anywhere yet, so the payment
+                  // screen simply opens.
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PaymentPage(
+                        quantity: quantity,
+                      ),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: ColorResources.primary,
                   foregroundColor: ColorResources.white,
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text('Continue to Payment'),
+                child: const Text('Continue to Payment'),
               ),
 
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
 
               TextButton(
                 onPressed: () {
-                  showMessage(
-                    'No order has been submitted. '
-                    'Back navigation will be connected later.',
-                  );
+                  Navigator.pop(context);
                 },
-                child: Text(
+                child: const Text(
                   'Cancel Order',
                   style: TextStyle(color: ColorResources.text),
                 ),

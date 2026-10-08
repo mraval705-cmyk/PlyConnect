@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'login.dart';
 import 'resources/color_resources.dart';
@@ -51,76 +49,20 @@ class _SignupPageState extends State<SignupPage> {
 
   bool isLoading = false;
 
-  // Creates the account in Firebase Authentication.
-  Future<void> createAccount() async {
+// Checks the form and asks the user to log in.
+  /// The form is checked, then the login screen is shown again.
+  void createAccount() {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      final credential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-      );
-
-      // Save the name and mobile number in Firestore so that the Profile
-      // screen can show them later.
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(credential.user!.uid)
-          .set({
-        'name': nameController.text.trim(),
-        'mobile': mobileController.text.trim(),
-        'email': emailController.text.trim(),
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      if (!mounted) {
-        return;
-      }
-
-      // The account is made, but the user must log in first. So we take
-      // them to the Login screen instead of opening the app.
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const LoginPage(),
-        ),
-        (route) => false,
-      );
-    } on FirebaseAuthException catch (error) {
-      showAuthError(error);
-    } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
-  }
-
-  void showAuthError(FirebaseAuthException error) {
-    String message;
-
-    if (error.code == 'email-already-in-use') {
-      message = 'This email is already registered. Please log in.';
-    } else if (error.code == 'weak-password') {
-      message = 'Please use a stronger password.';
-    } else if (error.code == 'invalid-email') {
-      message = 'Please enter a valid email address.';
-    } else {
-      message = 'Could not create the account. ${error.message}';
-    }
-
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      const SnackBar(
+        content: Text('Account details are valid. Please log in.'),
+      ),
     );
   }
+
 
   @override
   void dispose() {

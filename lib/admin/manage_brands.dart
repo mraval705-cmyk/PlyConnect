@@ -1,6 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../resources/color_resources.dart';
+import '../resources/sample_data.dart';
 import 'add_brand.dart';
 import 'edit_brand.dart';
 
@@ -14,72 +14,29 @@ class ManageBrandsPage extends StatefulWidget {
 class _ManageBrandsPageState extends State<ManageBrandsPage> {
   String search = '';
 
+  // A working copy of the sample list, so removing a brand keeps the change
+  // for the rest of the session.
+  final List<Map<String, dynamic>> brands =
+      List<Map<String, dynamic>>.from(SampleData.brands);
+
   void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
-  Future<void> removeBrand(String docId, String name) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: ColorResources.background,
-          title: Text('Remove Brand'),
-          content: Text('Remove $name from the database?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, false);
-              },
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: ColorResources.primary),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, true);
-              },
-              child: Text(
-                'Remove',
-                style: TextStyle(color: ColorResources.primary),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+  void removeItem(String id) {
+    setState(() {
+      brands.removeWhere((item) => item['id'] == id);
+    });
 
-    if (!mounted || confirmed != true) {
-      return;
-    }
-
-    try {
-      await FirebaseFirestore.instance
-          .collection('brands')
-          .doc(docId)
-          .delete();
-    } catch (error) {
-      if (mounted) {
-        showMessage('Could not remove the brand. $error');
-      }
-      return;
-    }
-
-    if (mounted) {
-      showMessage('Brand removed.');
-    }
+    showMessage('Brand removed.');
   }
 
-  Widget brandCard(String docId, Map<String, dynamic> brand) {
-    final name = '${brand['name'] ?? ''}';
-    final description = '${brand['description'] ?? ''}';
-
+  Widget brandCard(Map<String, dynamic> brand) {
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      padding: EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: ColorResources.white,
         borderRadius: BorderRadius.circular(12),
@@ -100,26 +57,24 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
                 ),
               ),
 
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
 
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name,
-                      style: TextStyle(
+                      '${brand['name']}',
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: ColorResources.primary,
                       ),
                     ),
-
-                    SizedBox(height: 8),
-
+                    const SizedBox(height: 8),
                     Text(
-                      description,
-                      style: TextStyle(
+                      '${brand['description']}',
+                      style: const TextStyle(
                         fontSize: 15,
                         height: 1.5,
                         color: ColorResources.text,
@@ -131,7 +86,7 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
             ],
           ),
 
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -146,17 +101,15 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
                     ),
                   );
                 },
-                icon: Icon(
+                icon: const Icon(
                   Icons.edit_outlined,
                   color: ColorResources.primary,
                 ),
               ),
               IconButton(
                 tooltip: 'Remove brand',
-                onPressed: () {
-                  removeBrand(docId, name);
-                },
-                icon: Icon(
+                onPressed: () => removeItem('${brand['id']}'),
+                icon: const Icon(
                   Icons.delete_outline,
                   color: ColorResources.primary,
                 ),
@@ -170,10 +123,17 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // where() filters the sample list, the same way it would filter live data.
+    final visible = brands.where((brand) {
+      final name = '${brand['name']}'.toLowerCase();
+      final description = '${brand['description']}'.toLowerCase();
+      return name.contains(search) || description.contains(search);
+    }).toList();
+
     return Scaffold(
       backgroundColor: ColorResources.background,
       appBar: AppBar(
-        title: Text('Brands'),
+        title: const Text('Brands'),
         backgroundColor: ColorResources.background,
         foregroundColor: ColorResources.primary,
       ),
@@ -181,11 +141,11 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   TextField(
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'Search Brand',
                       prefixIcon: Icon(
                         Icons.search,
@@ -199,23 +159,30 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
                     },
                   ),
 
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {
+                        // The list is given, so the new brand is added to it.
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => AddBrandPage(),
+                            builder: (context) => AddBrandPage(
+                              items: brands,
+                            ),
                           ),
-                        );
+                        ).then((changed) {
+                          if (changed == true) {
+                            setState(() {});
+                          }
+                        });
                       },
-                      icon: Icon(Icons.add),
-                      label: Text('Add Brand'),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Brand'),
                       style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                     ),
                   ),
@@ -223,65 +190,13 @@ class _ManageBrandsPageState extends State<ManageBrandsPage> {
               ),
             ),
 
-            // StreamBuilder keeps this list live: add or remove a brand in
-            // Firestore and it changes here without refreshing.
             Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream:
-                    FirebaseFirestore.instance.collection('brands').snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                      child: CircularProgressIndicator(
-                        color: ColorResources.primary,
-                      ),
-                    );
-                  }
-
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text(
-                          'Could not load brands.\n${snapshot.error}',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: ColorResources.text),
-                        ),
-                      ),
-                    );
-                  }
-
-                  final docs = snapshot.data?.docs ?? [];
-
-                  if (docs.isEmpty) {
-                    return SizedBox.shrink();
-                  }
-
-                  final visible = docs.where((doc) {
-                    final data = doc.data() as Map<String, dynamic>;
-                    final name = '${data['name'] ?? ''}'.toLowerCase();
-                    final description =
-                        '${data['description'] ?? ''}'.toLowerCase();
-                    return name.contains(search) || description.contains(search);
-                  }).toList();
-
-                  if (visible.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'No brands found.',
-                        style: TextStyle(color: ColorResources.text),
-                      ),
-                    );
-                  }
-
-                  return ListView(
-                    padding: EdgeInsets.all(16),
-                    children: visible
-                        .map((doc) => brandCard(doc.id, doc.data() as Map<String, dynamic>))
-                        .toList(),
-                  );
-                },
-              ),
+              child: visible.isEmpty
+                  ? const SizedBox.shrink()
+                  : ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: visible.map(brandCard).toList(),
+                    ),
             ),
           ],
         ),

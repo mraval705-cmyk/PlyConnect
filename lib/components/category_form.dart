@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../resources/color_resources.dart';
 
@@ -71,21 +70,6 @@ class _CategoryFormState extends State<CategoryForm> {
     });
 
     try {
-      final data = <String, dynamic>{
-        'name': nameController.text.trim(),
-        'description': descriptionController.text.trim(),
-      };
-
-      if (widget.isEditing) {
-        await FirebaseFirestore.instance
-            .collection('categories')
-            .doc('C001')
-            .update(data);
-      } else {
-        await FirebaseFirestore.instance
-            .collection('categories')
-            .add(data);
-      }
 
       if (!mounted) {
         return;

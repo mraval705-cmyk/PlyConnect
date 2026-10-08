@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../resources/color_resources.dart';
 import 'admin_dashboard.dart';
@@ -44,49 +43,21 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
   bool isLoading = false;
 
-  // Admin logs in with the same Firebase Authentication as the customer.
-  // Only the accounts that already exist in Firebase can sign in here.
-  Future<void> login() async {
+// Checks the form and opens the dashboard.
+
+  /// The form is checked, then the dashboard simply opens.
+  void login() {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const AdminDashboardPage(),
-        ),
-        (route) => false,
-      );
-    } on FirebaseAuthException catch (error) {
-      if (error.code == 'wrong-password' ||
-          error.code == 'user-not-found' ||
-          error.code == 'invalid-credential') {
-        showMessage('Wrong admin email or password.');
-      } else {
-        showMessage('Could not log in. ${error.message}');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AdminDashboardPage(),
+      ),
+      (route) => false,
+    );
   }
 
   @override
@@ -149,7 +120,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                 TextFormField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: fieldDesign('admin@plyconnect.com'),
+                  decoration: fieldDesign('Enter your email'),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter your email';
@@ -249,24 +220,6 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                 ),
 
                 SizedBox(height: 16),
-
-                Container(
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: ColorResources.white,
-                    border: Border.all(color: ColorResources.border),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'Demo screen\n'
-                    'Admin authentication will be added later.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      height: 1.6,
-                      color: ColorResources.text,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),

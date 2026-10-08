@@ -1,9 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../components/admin/stat_card.dart';
 import '../components/guest_page.dart';
-import '../login.dart';
 import '../resources/color_resources.dart';
+import '../resources/sample_data.dart';
 
 class MyOrdersPage extends StatefulWidget {
   const MyOrdersPage({super.key});
@@ -24,6 +23,10 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     'Delivered',
   ];
 
+  // A working copy of the sample orders.
+  final List<Map<String, dynamic>> orders =
+      List<Map<String, dynamic>>.from(SampleData.orders);
+
   void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -31,112 +34,19 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
   }
 
   Color statusColor(String status) {
-    if (status == 'Pending') {
-      return ColorResources.warning;
-    }
-    if (status == 'Confirmed') {
-      return ColorResources.info;
-    }
-    if (status == 'Delivered') {
-      return ColorResources.success;
-    }
+    if (status == 'Pending') return ColorResources.warning;
+    if (status == 'Confirmed') return ColorResources.info;
+    if (status == 'Delivered') return ColorResources.success;
     return ColorResources.primary;
   }
 
-  // Only the orders that belong to the signed in user are shown.
-  Stream<QuerySnapshot>? myOrdersStream() {
-    final currentUser = FirebaseAuth.instance.currentUser;
-
-    if (currentUser == null) {
-      return null;
-    }
-
-    return FirebaseFirestore.instance
-        .collection('orders')
-        .where('userId', isEqualTo: currentUser.uid)
-        .snapshots();
-  }
-
-  Widget loginNeeded() {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 60,
-              color: ColorResources.lightText,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Please login to see your orders.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                color: ColorResources.text,
-              ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const LoginPage(),
-                  ),
-                );
-              },
-              child: Text('Login'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget countCard(String title, int count) {
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: ColorResources.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: ColorResources.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 10,
-                color: ColorResources.text,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              '$count',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: ColorResources.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget orderCard(Map<String, dynamic> order) {
-    final quantity = '${order['quantity'] ?? 1}';
-    final status = '${order['status'] ?? 'Pending'}';
+    final quantity = order['quantity'];
+    final status = '${order['status']}';
 
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      padding: EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: ColorResources.white,
         borderRadius: BorderRadius.circular(16),
@@ -151,16 +61,16 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${order['orderId'] ?? ''}',
-                      style: TextStyle(
+                      '#${order['orderId']}',
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: ColorResources.primary,
                       ),
                     ),
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     Text(
-                      '${order['date'] ?? ''}',
-                      style: TextStyle(
+                      '${order['date']}',
+                      style: const TextStyle(
                         fontSize: 12,
                         color: ColorResources.text,
                       ),
@@ -169,10 +79,8 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: ColorResources.background,
                   borderRadius: BorderRadius.circular(20),
@@ -190,9 +98,9 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
             ],
           ),
 
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Divider(color: ColorResources.border),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
 
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,33 +114,33 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                   fit: BoxFit.cover,
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${order['name'] ?? ''}',
-                      style: TextStyle(
+                      '${order['name']}',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: ColorResources.primary,
                       ),
                     ),
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     Text(
-                      '${order['brand'] ?? ''} • ${order['thickness'] ?? ''}',
-                      style: TextStyle(color: ColorResources.text),
+                      '${order['brand']} • ${order['thickness']}',
+                      style: const TextStyle(color: ColorResources.text),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     Text(
-                      'Qty: $quantity ${quantity == '1' ? 'Sheet' : 'Sheets'}',
-                      style: TextStyle(color: ColorResources.text),
+                      'Qty: $quantity ${quantity == 1 ? 'Sheet' : 'Sheets'}',
+                      style: const TextStyle(color: ColorResources.text),
                     ),
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     Text(
-                      '₹${order['total'] ?? 0}',
-                      style: TextStyle(
+                      '₹${order['total']}',
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: ColorResources.primary,
                       ),
@@ -243,7 +151,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
             ],
           ),
 
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           Row(
             children: [
@@ -253,21 +161,21 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                     showMessage('Order details will be connected later.');
                   },
                   style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
                   ),
-                  child: Text('View Details'),
+                  child: const Text('View Details'),
                 ),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
                     showMessage('Invoice generation is not connected yet.');
                   },
                   style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
                   ),
-                  child: Text('View Invoice'),
+                  child: const Text('View Invoice'),
                 ),
               ),
             ],
@@ -279,140 +187,121 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
 
   @override
   Widget build(BuildContext context) {
-    final stream = myOrdersStream();
+    // where() filters the sample orders, the same way it would filter live
+    // data.
+    final visible = orders.where((order) {
+      final orderId = '${order['orderId']}'.toLowerCase();
+      final status = '${order['status']}';
+
+      final matchesSearch = orderId.contains(search);
+      final matchesStatus =
+          selectedStatus == 'All' || status == selectedStatus;
+
+      return matchesSearch && matchesStatus;
+    }).toList();
+
+    // fold() is not needed here, a simple count is enough.
+    int countWithStatus(String status) {
+      return orders.where((order) {
+        return order['status'] == status;
+      }).length;
+    }
 
     return GuestPage(
       title: 'My Orders',
       selectedIndex: 3,
-      body: stream == null
-          ? loginNeeded()
-          : StreamBuilder<QuerySnapshot>(
-              stream: stream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                      color: ColorResources.primary,
-                    ),
-                  );
-                }
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: StatCard(
+                  label: 'TOTAL',
+                  value: '${orders.length}',
+                  icon: Icons.receipt_long_outlined,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: StatCard(
+                  label: 'PENDING',
+                  value: '${countWithStatus('Pending')}',
+                  icon: Icons.pending_actions_outlined,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: StatCard(
+                  label: 'DELIVERED',
+                  value: '${countWithStatus('Delivered')}',
+                  icon: Icons.check_circle_outline,
+                ),
+              ),
+            ],
+          ),
 
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text(
-                        'Could not load your orders.\n${snapshot.error}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: ColorResources.text),
-                      ),
-                    ),
-                  );
-                }
+          const SizedBox(height: 24),
 
-                final docs = snapshot.data?.docs ?? [];
-
-                int countWithStatus(String status) {
-                  return docs.where((doc) {
-                    final data = doc.data() as Map<String, dynamic>;
-                    return '${data['status'] ?? ''}' == status;
-                  }).length;
-                }
-
-                final visible = docs.where((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  final orderId =
-                      '${data['orderId'] ?? ''}'.toLowerCase();
-                  final status = '${data['status'] ?? ''}';
-
-                  final matchesSearch = orderId.contains(search);
-                  final matchesStatus =
-                      selectedStatus == 'All' || status == selectedStatus;
-
-                  return matchesSearch && matchesStatus;
-                }).toList();
-
-                return ListView(
-                  padding: EdgeInsets.all(16),
-                  children: [
-                    Row(
-                      children: [
-                        countCard('TOTAL', docs.length),
-                        SizedBox(width: 8),
-                        countCard('PENDING', countWithStatus('Pending')),
-                        SizedBox(width: 8),
-                        countCard('DELIVERED', countWithStatus('Delivered')),
-                      ],
-                    ),
-
-                    SizedBox(height: 24),
-
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search by Order ID',
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: ColorResources.primary,
-                        ),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          search = value.trim().toLowerCase();
-                        });
-                      },
-                    ),
-
-                    SizedBox(height: 16),
-
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: statuses.map((status) {
-                          final selected = selectedStatus == status;
-
-                          return Padding(
-                            padding: EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              label: Text(status),
-                              selected: selected,
-                              showCheckmark: false,
-                              selectedColor: ColorResources.primary,
-                              backgroundColor: ColorResources.white,
-                              labelStyle: TextStyle(
-                                color: selected
-                                    ? ColorResources.white
-                                    : ColorResources.primary,
-                              ),
-                              onSelected: (value) {
-                                setState(() {
-                                  selectedStatus = status;
-                                });
-                              },
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-
-                    SizedBox(height: 20),
-
-                    if (visible.isEmpty)
-                      Padding(
-                        padding: EdgeInsets.symmetric(vertical: 40),
-                        child: Text(
-                          'No orders found.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: ColorResources.text),
-                        ),
-                      ),
-
-                    ...visible.map(
-                      (doc) => orderCard(doc.data() as Map<String, dynamic>),
-                    ),
-                  ],
-                );
-              },
+          TextField(
+            decoration: const InputDecoration(
+              hintText: 'Search by Order ID',
+              prefixIcon: Icon(Icons.search, color: ColorResources.primary),
             ),
+            onChanged: (value) {
+              setState(() {
+                search = value.trim().toLowerCase();
+              });
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: statuses.map((status) {
+                final selected = selectedStatus == status;
+
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(status),
+                    selected: selected,
+                    showCheckmark: false,
+                    selectedColor: ColorResources.primary,
+                    backgroundColor: ColorResources.white,
+                    labelStyle: TextStyle(
+                      color: selected
+                          ? ColorResources.white
+                          : ColorResources.primary,
+                    ),
+                    onSelected: (value) {
+                      setState(() {
+                        selectedStatus = status;
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          if (visible.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Text(
+                'No matching orders.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: ColorResources.text),
+              ),
+            ),
+
+          ...visible.map(orderCard),
+        ],
+      ),
     );
   }
 }

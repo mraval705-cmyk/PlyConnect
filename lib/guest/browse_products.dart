@@ -1,7 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../resources/color_resources.dart';
+import '../resources/sample_data.dart';
 import '../user/my_orders.dart';
 import '../user/my_profile.dart';
 import '../user/wishlist.dart';
@@ -28,41 +27,6 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
     );
   }
 
-  // A guest is asked to login. A signed in user saves the product into their
-  // own wishlist straight away.
-  Future<void> saveToWishlist(Map<String, dynamic> product) async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-
-    if (currentUser == null) {
-      showMessage('Please log in to save products.');
-      return;
-    }
-
-    final name = '${product['name'] ?? ''}';
-
-    try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .collection('wishlist')
-          .doc('$name')
-          .set({
-        'name': name,
-        'brand': '${product['brand'] ?? ''}',
-        'category': '${product['category'] ?? ''}',
-        'thickness': '${product['thickness'] ?? ''}',
-        'price': '${product['price'] ?? 0}',
-        'image': '${product['image'] ?? ''}',
-        'addedAt': FieldValue.serverTimestamp(),
-      });
-    } catch (error) {
-      showMessage('Could not save the product. $error');
-      return;
-    }
-
-    showMessage('$name added to your wishlist.');
-  }
-
   void openPage(Widget page) {
     Navigator.push(
       context,
@@ -77,17 +41,23 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
     return '$value';
   }
 
-  // The same filtering that the design shows, now applied to Firestore data.
-  List<QueryDocumentSnapshot> filterProducts(
-    List<QueryDocumentSnapshot> docs,
-  ) {
-    final result = docs.where((doc) {
-      final data = doc.data() as Map<String, dynamic>;
+  /// A price may be stored as a number or as text, so it is read the same
+  /// way every time before sorting.
+  double readPrice(Map<String, dynamic> item) {
+    final value = item['price'];
+    if (value is num) {
+      return value.toDouble();
+    }
+    return double.tryParse('$value') ?? 0;
+  }
 
-      final name = '${data['name'] ?? ''}'.toLowerCase();
-      final itemBrand = '${data['brand'] ?? ''}';
-      final itemCategory = '${data['category'] ?? ''}';
-      final itemThickness = '${data['thickness'] ?? ''}';
+  /// The same filtering the design shows, applied to the sample list.
+  List<Map<String, dynamic>> filtered() {
+    final result = SampleData.products.where((item) {
+      final name = '${item['name']}'.toLowerCase();
+      final itemBrand = '${item['brand']}';
+      final itemCategory = '${item['category']}';
+      final itemThickness = '${item['thickness']}';
 
       final matchesSearch =
           name.contains(search) || itemBrand.toLowerCase().contains(search);
@@ -103,16 +73,7 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
           matchesThickness;
     }).toList();
 
-    // Firestore may store a price as a number or as text, so it is read
-    // through one small helper before sorting.
-    double readPrice(QueryDocumentSnapshot doc) {
-      final value = (doc.data() as Map<String, dynamic>)['price'];
-      if (value is num) {
-        return value.toDouble();
-      }
-      return double.tryParse('$value') ?? 0;
-    }
-
+    // sort() puts the cheapest or the dearest product first.
     if (priceOrder == 'Low to High') {
       result.sort((a, b) => readPrice(a).compareTo(readPrice(b)));
     } else if (priceOrder == 'High to Low') {
@@ -129,8 +90,8 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
     ValueChanged<String?> onChanged,
   ) {
     return Container(
-      margin: EdgeInsets.only(right: 10),
-      padding: EdgeInsets.symmetric(horizontal: 12),
+      margin: const EdgeInsets.only(right: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: ColorResources.white,
         border: Border.all(color: ColorResources.border),
@@ -140,14 +101,11 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
         child: DropdownButton<String>(
           value: selected,
           dropdownColor: ColorResources.background,
-          icon: Icon(
+          icon: const Icon(
             Icons.keyboard_arrow_down,
             color: ColorResources.primary,
           ),
-          style: TextStyle(
-            fontSize: 12,
-            color: ColorResources.primary,
-          ),
+          style: const TextStyle(fontSize: 12, color: ColorResources.primary),
           selectedItemBuilder: (context) {
             return options.map((option) {
               return Align(
@@ -191,7 +149,6 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
                 height: 170,
                 fit: BoxFit.cover,
               ),
-
               Positioned(
                 top: 8,
                 right: 8,
@@ -202,12 +159,12 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
                   ),
                   child: IconButton(
                     tooltip: 'Save product',
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.favorite_border,
                       color: ColorResources.primary,
                     ),
                     onPressed: () {
-                      saveToWishlist(product);
+                      showMessage('Please log in to save products.');
                     },
                   ),
                 ),
@@ -216,52 +173,41 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
           ),
 
           Padding(
-            padding: EdgeInsets.all(12),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${product['brand'] ?? ''}',
-                  style: TextStyle(
+                  '${product['brand']}',
+                  style: const TextStyle(
                     fontSize: 10,
                     color: ColorResources.lightText,
                   ),
                 ),
-
-                SizedBox(height: 8),
-
+                const SizedBox(height: 8),
                 Text(
-                  '${product['name'] ?? ''}',
-                  style: TextStyle(
+                  '${product['name']}',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: ColorResources.heading,
                   ),
                 ),
-
-                SizedBox(height: 6),
-
+                const SizedBox(height: 6),
                 Text(
-                  '${product['thickness'] ?? ''}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: ColorResources.text,
-                  ),
+                  '${product['thickness']}',
+                  style: const TextStyle(fontSize: 12, color: ColorResources.text),
                 ),
-
-                SizedBox(height: 16),
-
+                const SizedBox(height: 16),
                 Text(
                   '₹$price / sq.ft',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: ColorResources.primary,
                   ),
                 ),
-
-                SizedBox(height: 12),
-
+                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -271,21 +217,21 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
                         MaterialPageRoute(
                           builder: (context) => ProductDetailsPage(
                             product: {
-                              'name': '${product['name'] ?? ''}',
-                              'brand': '${product['brand'] ?? ''}',
-                              'category': '${product['category'] ?? ''}',
-                              'thickness': '${product['thickness'] ?? ''}',
+                              'name': '${product['name']}',
+                              'brand': '${product['brand']}',
+                              'category': '${product['category']}',
+                              'thickness': '${product['thickness']}',
                               'price': '₹$price / sq.ft',
-                              'image': '${product['image'] ?? ''}',
+                              'image': '${product['image']}',
                             },
                           ),
                         ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                    child: Text('View Details'),
+                    child: const Text('View Details'),
                   ),
                 ),
               ],
@@ -296,22 +242,85 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
     );
   }
 
+  Widget buildFilterRow() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          filterBox(
+            'Category',
+            category,
+            const ['All', 'Marine', 'HDHMR', 'Birch', 'Commercial'],
+            (value) {
+              if (value == null) return;
+              setState(() {
+                category = value;
+              });
+            },
+          ),
+
+          filterBox(
+            'Brand',
+            brand,
+            const [
+              'All',
+              'GREENPLY',
+              'CENTURYPLY',
+              'ACTION TESA',
+              'SARDA PLYWOOD',
+            ],
+            (value) {
+              if (value == null) return;
+              setState(() {
+                brand = value;
+              });
+            },
+          ),
+
+          filterBox(
+            'Thickness',
+            thickness,
+            const ['All', '12mm', '16mm', '18mm', '19mm'],
+            (value) {
+              if (value == null) return;
+              setState(() {
+                thickness = value;
+              });
+            },
+          ),
+
+          filterBox(
+            'Price',
+            priceOrder,
+            const ['Default', 'Low to High', 'High to Low'],
+            (value) {
+              if (value == null) return;
+              setState(() {
+                priceOrder = value;
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final visible = filtered();
+
     return Scaffold(
       backgroundColor: ColorResources.background,
 
       appBar: AppBar(
-        title: Text('Browse Products'),
+        title: const Text('Browse Products'),
         backgroundColor: ColorResources.background,
         foregroundColor: ColorResources.primary,
         actions: [
           IconButton(
             tooltip: 'Profile',
-            icon: Icon(Icons.person_outline),
-            onPressed: () {
-              openPage(const MyProfilePage());
-            },
+            icon: const Icon(Icons.person_outline),
+            onPressed: () => openPage(const MyProfilePage()),
           ),
         ],
       ),
@@ -319,12 +328,12 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
       body: Column(
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextField(
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: 'Search plywood types, brands...',
                     prefixIcon: Icon(
                       Icons.search,
@@ -337,155 +346,59 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
                     });
                   },
                 ),
-
-                SizedBox(height: 16),
-
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      filterBox(
-                        'Category',
-                        category,
-                        ['All', 'Marine', 'HDHMR', 'Birch'],
-                        (value) {
-                          if (value == null) return;
-                          setState(() {
-                            category = value;
-                          });
-                        },
-                      ),
-
-                      filterBox(
-                        'Brand',
-                        brand,
-                        [
-                          'All',
-                          'GREENPLY',
-                          'CENTURYPLY',
-                          'ACTION TESA',
-                          'SARDA PLYWOOD',
-                        ],
-                        (value) {
-                          if (value == null) return;
-                          setState(() {
-                            brand = value;
-                          });
-                        },
-                      ),
-
-                      filterBox(
-                        'Thickness',
-                        thickness,
-                        ['All', '12mm', '16mm', '18mm', '19mm'],
-                        (value) {
-                          if (value == null) return;
-                          setState(() {
-                            thickness = value;
-                          });
-                        },
-                      ),
-
-                      filterBox(
-                        'Price',
-                        priceOrder,
-                        ['Default', 'Low to High', 'High to Low'],
-                        (value) {
-                          if (value == null) return;
-                          setState(() {
-                            priceOrder = value;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+                const SizedBox(height: 16),
+                buildFilterRow(),
               ],
             ),
           ),
 
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
 
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream:
-                  FirebaseFirestore.instance.collection('products').snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                      color: ColorResources.primary,
-                    ),
-                  );
-                }
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    '${visible.length} products',
+                    style: const TextStyle(color: ColorResources.text),
+                  ),
 
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
+                  const SizedBox(height: 16),
+
+                  if (visible.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
                       child: Text(
-                        'Could not load products.\n${snapshot.error}',
+                        'No products match your search or filters.',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: ColorResources.text),
                       ),
                     ),
-                  );
-                }
 
-                final docs = snapshot.data?.docs ?? [];
-                final visible = filterProducts(docs);
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final width = constraints.maxWidth < 320
+                          ? constraints.maxWidth
+                          : (constraints.maxWidth - 16) / 2;
 
-                if (docs.isEmpty) {
-                  return SizedBox.shrink();
-                }
-
-                return SingleChildScrollView(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        '${visible.length} products',
-                        style: TextStyle(color: ColorResources.text),
-                      ),
-
-                      SizedBox(height: 16),
-
-                      if (visible.isEmpty)
-                        Padding(
-                          padding: EdgeInsets.symmetric(vertical: 40),
-                          child: Text(
-                            'No products match your search or filters.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: ColorResources.text),
-                          ),
-                        ),
-
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final width = constraints.maxWidth < 320
-                              ? constraints.maxWidth
-                              : (constraints.maxWidth - 16) / 2;
-
-                          return Wrap(
-                            spacing: 16,
-                            runSpacing: 16,
-                            children: visible.map((doc) {
-                              final card = SizedBox(
-                                width: width,
-                                child: productCard(doc.data() as Map<String, dynamic>),
-                              );
-                              return card;
-                            }).toList(),
+                      return Wrap(
+                        spacing: 16,
+                        runSpacing: 16,
+                        children: visible.map((item) {
+                          return SizedBox(
+                            width: width,
+                            child: productCard(item),
                           );
-                        },
-                      ),
-
-                      SizedBox(height: 24),
-                    ],
+                        }).toList(),
+                      );
+                    },
                   ),
-                );
-              },
+
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
         ],
@@ -510,7 +423,7 @@ class _BrowseProductsPageState extends State<BrowseProductsPage> {
             openPage(const MyProfilePage());
           }
         },
-        items: [
+        items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             label: 'Home',

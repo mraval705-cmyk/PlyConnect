@@ -1,7 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../login.dart';
 import '../resources/color_resources.dart';
+import '../resources/sample_data.dart';
 import '../user/my_orders.dart';
 import '../user/my_profile.dart';
 import '../user/wishlist.dart';
@@ -37,41 +37,10 @@ class _GuestHomePageState extends State<GuestHomePage> {
     Icons.layers_outlined,
   ];
 
-  // The category chips are still a fixed list, because they describe the
-  // shop sections. The products themselves now come from Firestore.
-  String showPrice(dynamic value) {
-    if (value is num) {
-      return '₹${value.toStringAsFixed(0)} / sq.ft';
-    }
-    return '₹$value / sq.ft';
-  }
-
-  void openLogin() {
+  void openPage(Widget page) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => LoginPage(),
-      ),
-    );
-  }
-
-  void openDetails(Map<String, String> product) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProductDetailsPage(
-          product: product,
-        ),
-      ),
-    );
-  }
-
-  void openBrowse() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BrowseProductsPage(),
-      ),
+      MaterialPageRoute(builder: (context) => page),
     );
   }
 
@@ -81,10 +50,35 @@ class _GuestHomePageState extends State<GuestHomePage> {
     );
   }
 
+  String showPrice(dynamic value) {
+    if (value is num) {
+      return '₹${value.toStringAsFixed(0)} / sq.ft';
+    }
+    return '₹$value / sq.ft';
+  }
+
+  /// The same filtering the design shows, applied to the sample list.
+  ///
+  /// The category is compared in lower case, because a product and a chip do
+  /// not always write it the same way.
+  List<Map<String, dynamic>> filterProducts() {
+    return SampleData.products.where((item) {
+      final name = '${item['name']}'.toLowerCase();
+      final brand = '${item['brand']}'.toLowerCase();
+      final category = '${item['category']}'.toLowerCase();
+
+      final matchesSearch = name.contains(search) || brand.contains(search);
+      final matchesCategory = selectedCategory == 'All' ||
+          category == selectedCategory.toLowerCase();
+
+      return matchesSearch && matchesCategory;
+    }).toList();
+  }
+
   Widget heading(String text) {
     return Text(
       text,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.bold,
         color: ColorResources.heading,
@@ -105,58 +99,63 @@ class _GuestHomePageState extends State<GuestHomePage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Image.asset(
-            product['image']!,
+            product['image'] ?? 'assets/images/club_prime.png',
             height: 160,
             fit: BoxFit.cover,
           ),
           Padding(
-            padding: EdgeInsets.all(12),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  product['brand']!,
-                  style: TextStyle(
+                  '${product['brand']}',
+                  style: const TextStyle(
                     fontSize: 10,
                     color: ColorResources.text,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  product['name']!,
-                  style: TextStyle(
+                  '${product['name']}',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: ColorResources.heading,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  product['price']!,
-                  style: TextStyle(
+                  '${product['price']}',
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: ColorResources.primary,
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      openDetails(product);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProductDetailsPage(
+                            product: product,
+                          ),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ColorResources.primary,
                       foregroundColor: ColorResources.white,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 10,
-                      ),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: Text('View Details'),
+                    child: const Text('View Details'),
                   ),
                 ),
               ],
@@ -167,50 +166,29 @@ class _GuestHomePageState extends State<GuestHomePage> {
     );
   }
 
-  // Kept for the same filtering as the design, now applied to Firestore docs.
-  List<QueryDocumentSnapshot> filterProducts(List<QueryDocumentSnapshot> docs) {
-    return docs.where((doc) {
-      final data = doc.data() as Map<String, dynamic>;
-      final name = '${data['name'] ?? ''}'.toLowerCase();
-      final brand = '${data['brand'] ?? ''}'.toLowerCase();
-      final category = '${data['category'] ?? ''}';
-
-      final matchesSearch = name.contains(search) || brand.contains(search);
-      final matchesCategory =
-          selectedCategory == 'All' || category == selectedCategory;
-
-      return matchesSearch && matchesCategory;
-    }).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final visible = filterProducts();
+
     return Scaffold(
       backgroundColor: ColorResources.background,
 
       appBar: AppBar(
-        title: Text('PlyConnect'),
+        title: const Text('PlyConnect'),
         backgroundColor: ColorResources.background,
         foregroundColor: ColorResources.primary,
         actions: [
           IconButton(
             tooltip: 'Notifications',
-            icon: Icon(Icons.notifications_none),
+            icon: const Icon(Icons.notifications_none),
             onPressed: () {
               showMessage('Please log in to view notifications.');
             },
           ),
           IconButton(
             tooltip: 'My Profile',
-            icon: Icon(Icons.person_outline),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MyProfilePage(),
-                ),
-              );
-            },
+            icon: const Icon(Icons.person_outline),
+            onPressed: () => openPage(const MyProfilePage()),
           ),
         ],
       ),
@@ -222,19 +200,19 @@ class _GuestHomePageState extends State<GuestHomePage> {
             padding: EdgeInsets.zero,
             children: [
               Padding(
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: heading('PlyConnect'),
               ),
               ListTile(
-                leading: Icon(Icons.home_outlined),
-                title: Text('Home'),
+                leading: const Icon(Icons.home_outlined),
+                title: const Text('Home'),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
               ListTile(
-                leading: Icon(Icons.login),
-                title: Text('Login / Sign Up'),
+                leading: const Icon(Icons.login),
+                title: const Text('Login / Sign Up'),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -251,23 +229,16 @@ class _GuestHomePageState extends State<GuestHomePage> {
       ),
 
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Search plywood products...',
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: ColorResources.primary,
-                ),
+                prefixIcon: Icon(Icons.search, color: ColorResources.primary),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: ColorResources.border),
+                  borderRadius: BorderRadius.all(Radius.circular(16)),
                 ),
               ),
               onChanged: (value) {
@@ -277,24 +248,15 @@ class _GuestHomePageState extends State<GuestHomePage> {
               },
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 heading('Categories'),
                 TextButton(
-                  onPressed: () {
-                    // "View All" opens the full category list, which is
-                    // read from the same Firestore collection.
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CategoriesPage(),
-                      ),
-                    );
-                  },
-                  child: Text(
+                  onPressed: () => openPage(const CategoriesPage()),
+                  child: const Text(
                     'View All',
                     style: TextStyle(color: ColorResources.primary),
                   ),
@@ -306,15 +268,13 @@ class _GuestHomePageState extends State<GuestHomePage> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: List.generate(categories.length, (index) {
-                  final selected =
-                      selectedCategory == categories[index];
+                  final selected = selectedCategory == categories[index];
 
                   return Padding(
-                    padding: EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.only(right: 12),
                     child: InkWell(
                       onTap: () {
-                        // Tapping a category filters the products below it,
-                        // so the matching products appear on the same screen.
+                        // Tapping a category filters the products below.
                         setState(() {
                           selectedCategory = categories[index];
                         });
@@ -339,10 +299,10 @@ class _GuestHomePageState extends State<GuestHomePage> {
                                     : ColorResources.primary,
                               ),
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             Text(
                               categories[index],
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 12,
                                 color: ColorResources.text,
                               ),
@@ -356,20 +316,20 @@ class _GuestHomePageState extends State<GuestHomePage> {
               ),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             Container(
               width: double.infinity,
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                image: DecorationImage(
+                image: const DecorationImage(
                   image: AssetImage('assets/images/home_banner.png'),
                   fit: BoxFit.cover,
                 ),
               ),
               child: Container(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -381,7 +341,7 @@ class _GuestHomePageState extends State<GuestHomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'NEW ARRIVAL',
                       style: TextStyle(
                         fontSize: 12,
@@ -389,8 +349,8 @@ class _GuestHomePageState extends State<GuestHomePage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
+                    const SizedBox(height: 8),
+                    const Text(
                       'Ultra-Core\nPremium Plywood',
                       style: TextStyle(
                         fontSize: 24,
@@ -398,157 +358,115 @@ class _GuestHomePageState extends State<GuestHomePage> {
                         color: ColorResources.white,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
+                    const SizedBox(height: 8),
+                    const Text(
                       'Starting from ₹95 / sq.ft',
                       style: TextStyle(color: ColorResources.white),
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: openBrowse,
+                      onPressed: () => openPage(const BrowseProductsPage()),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: ColorResources.white,
                         foregroundColor: ColorResources.primary,
                       ),
-                      child: Text('Explore Now'),
+                      child: const Text('Explore Now'),
                     ),
                   ],
                 ),
               ),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             heading('Trusted Brands'),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-            // Brands come from Firestore, so tapping one opens that brand's
-            // own product list.
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('brands')
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return SizedBox.shrink();
-                }
+            // The brand strip comes from the sample list.
+            SizedBox(
+              height: 70,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: SampleData.brands.length,
+                itemBuilder: (context, index) {
+                  final brandName = '${SampleData.brands[index]['name']}';
 
-                final docs = snapshot.data?.docs ?? [];
-
-                if (docs.isEmpty) {
-                  return SizedBox.shrink();
-                }
-
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: docs.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      final brandName = '${data['name'] ?? ''}';
-
-                      return InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => BrandProductsPage(
-                                brandName: brandName,
-                              ),
-                            ),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          margin: EdgeInsets.only(right: 12),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 18,
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                BrandProductsPage(brandName: brandName),
                           ),
-                          decoration: BoxDecoration(
-                            color: ColorResources.white,
-                            border: Border.all(color: ColorResources.border),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Text(
-                            brandName,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: ColorResources.primary,
-                            ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 18,
+                        ),
+                        decoration: BoxDecoration(
+                          color: ColorResources.white,
+                          border: Border.all(color: ColorResources.border),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          brandName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: ColorResources.primary,
                           ),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                );
-              },
-            ),
-
-            SizedBox(height: 24),
-            heading('Popular Products'),
-            SizedBox(height: 16),
-
-            // Products are read live from Firestore.
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('products')
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: CircularProgressIndicator(
-                        color: ColorResources.primary,
                       ),
                     ),
                   );
-                }
+                },
+              ),
+            ),
 
-                if (snapshot.hasError) {
-                  return Text(
-                    'Could not load products.',
-                    style: TextStyle(color: ColorResources.text),
-                  );
-                }
+            const SizedBox(height: 24),
+            heading('Popular Products'),
+            const SizedBox(height: 16),
 
-                final docs = snapshot.data?.docs ?? [];
-                final visible = filterProducts(docs);
+            if (visible.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  'No matching products.',
+                  style: TextStyle(color: ColorResources.text),
+                ),
+              ),
 
-                if (visible.isEmpty) {
-                  return SizedBox.shrink();
-                }
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth < 320
+                    ? constraints.maxWidth
+                    : (constraints.maxWidth - 12) / 2;
 
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    final width = constraints.maxWidth < 320
-                        ? constraints.maxWidth
-                        : (constraints.maxWidth - 12) / 2;
-
-                    return Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: visible.map((doc) {
-                        final data = doc.data() as Map<String, dynamic>;
-
-                        return productCard(
-                          {
-                            'name': '${data['name'] ?? ''}',
-                            'brand': '${data['brand'] ?? ''}',
-                            'category': '${data['category'] ?? ''}',
-                            'thickness': '${data['thickness'] ?? ''}',
-                            'price': showPrice(data['price']),
-                            'image': '${data['image'] ?? ''}',
-                          },
-                          width,
-                        );
-                      }).toList(),
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: visible.map((item) {
+                    return productCard(
+                      {
+                        'name': '${item['name']}',
+                        'brand': '${item['brand']}',
+                        'category': '${item['category']}',
+                        'thickness': '${item['thickness']}',
+                        'price': showPrice(item['price']),
+                        'image': '${item['image']}',
+                      },
+                      width,
                     );
-                  },
+                  }).toList(),
                 );
               },
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -563,31 +481,16 @@ class _GuestHomePageState extends State<GuestHomePage> {
         unselectedFontSize: 11,
         onTap: (index) {
           if (index == 1) {
-            openBrowse();
+            openPage(const BrowseProductsPage());
           } else if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const WishlistPage(),
-              ),
-            );
+            openPage(const WishlistPage());
           } else if (index == 3) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const MyOrdersPage(),
-              ),
-            );
+            openPage(const MyOrdersPage());
           } else if (index == 4) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const MyProfilePage(),
-              ),
-            );
+            openPage(const MyProfilePage());
           }
         },
-        items: [
+        items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             label: 'Home',

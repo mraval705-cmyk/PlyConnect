@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -499,66 +498,8 @@ class _LocalProductsPageState extends State<LocalProductsPage> {
   }
 
   // Copies the registered list into Firestore as well.
-  Future<void> sendToDatabase() async {
-    if (products.isEmpty) {
-      showMessage('Nothing registered yet.');
-      return;
-    }
-
-    setState(() {
-      isBusy = true;
-    });
-
-    try {
-      final collection = FirebaseFirestore.instance.collection('products');
-
-      for (final item in products) {
-        await collection.doc(item.name).set(item.toMap());
-      }
-    } catch (error) {
-      if (!mounted) return;
-      showMessage('Could not send. $error');
-      return;
-    }
-
-    if (!mounted) return;
-    setState(() {
-      isBusy = false;
-    });
-
-    showMessage('Sent ${products.length} products to the database.');
-  }
 
   // Brings the products from Firestore into the registered list.
-  Future<void> readFromDatabase() async {
-    setState(() {
-      isBusy = true;
-    });
-
-    try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('products').get();
-
-      setState(() {
-        products.clear();
-
-        for (final doc in snapshot.docs) {
-          products.add(Product.fromMap(doc.data() as Map<String, dynamic>));
-        }
-      });
-    } catch (error) {
-      if (!mounted) return;
-      showMessage('Could not read. $error');
-      return;
-    }
-
-    if (!mounted) return;
-    setState(() {
-      isBusy = false;
-    });
-
-    showMessage('Read ${products.length} products.');
-  }
 
   @override
   void dispose() {
@@ -612,35 +553,6 @@ class _LocalProductsPageState extends State<LocalProductsPage> {
                           icon: const Icon(Icons.save),
                           label: const Text('Save'),
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // The same two actions, but for the cloud database.
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: readFromDatabase,
-                          icon: const Icon(Icons.cloud_download),
-                          label: const Text('Read Cloud'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: sendToDatabase,
-                          icon: const Icon(Icons.cloud_upload),
-                          label: const Text('Send Cloud'),
-                          style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                         ),

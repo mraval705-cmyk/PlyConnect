@@ -1,13 +1,21 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../resources/color_resources.dart';
 
 class ProductForm extends StatefulWidget {
   final bool isEditing;
 
+  // The list that this form should add to or update. It is given by the
+  // Manage Products screen so the change is visible in the list.
+  final List<Map<String, dynamic>>? items;
+
+  // The position of the item being edited inside that list.
+  final int editIndex;
+
   const ProductForm({
     super.key,
     this.isEditing = false,
+    this.items,
+    this.editIndex = 0,
   });
 
   @override
@@ -129,6 +137,8 @@ class _ProductFormState extends State<ProductForm> {
   bool isLoading = false;
 
   // Writes the product into the "products" collection in Firestore.
+  // The product is added to, or changed inside, the list that the
+  // Manage Products screen passed in. Nothing is sent to a server.
   Future<void> saveProduct() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -139,36 +149,37 @@ class _ProductFormState extends State<ProductForm> {
     });
 
     try {
-      final data = <String, dynamic>{
+      final product = <String, dynamic>{
+        'id': 'NEW' + DateTime.now().millisecondsSinceEpoch.toString(),
         'name': nameController.text.trim(),
-        'brand': brand,
-        'category': category,
-        'thickness': thickness,
-        'sheetSize': sheetSize,
-        'price': double.parse(priceController.text.trim()),
+        'brand': brand ?? '',
+        'category': category ?? '',
+        'thickness': thickness ?? '',
+        'sheetSize': sheetSize ?? '',
+        'price': double.tryParse(priceController.text.trim()) ?? 0,
         'description': descriptionController.text.trim(),
+        'image': 'assets/images/club_prime.png',
       };
 
-      if (widget.isEditing) {
-        await FirebaseFirestore.instance
-            .collection('products')
-            .doc('P001')
-            .update(data);
-      } else {
-        await FirebaseFirestore.instance
-            .collection('products')
-            .add(data);
+      if (widget.items != null) {
+        if (widget.isEditing) {
+          // Update replaces the item that sits at the given index.
+          widget.items![widget.editIndex] = product;
+        } else {
+          // Add puts the new item at the end of the list.
+          widget.items!.add(product);
+        }
       }
 
       if (!mounted) {
         return;
       }
 
-      showMessage(widget.isEditing ? 'Product updated.' : 'Product saved.');
+      showMessage(widget.isEditing ? 'Product updated.' : 'Product added.');
 
-      Future.delayed(const Duration(milliseconds: 600), () {
+      Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) {
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       });
     } catch (error) {

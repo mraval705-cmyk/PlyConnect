@@ -1,6 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../resources/color_resources.dart';
+import '../resources/sample_data.dart';
 import 'add_product.dart';
 import 'edit_product.dart';
 
@@ -14,79 +14,118 @@ class ManageProductsPage extends StatefulWidget {
 class _ManageProductsPageState extends State<ManageProductsPage> {
   String search = '';
 
+  // Ids of the products the admin ticked with the checkbox.
+  final Set<String> selected = <String>{};
+
+  // A working copy of the sample list, so removing a product keeps the
+  // change for the rest of the session.
+  final List<Map<String, dynamic>> products =
+      List<Map<String, dynamic>>.from(SampleData.products);
+
   void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
-  Future<void> deleteProduct(String docId, String name) async {
-    final confirmed = await showDialog<bool>(
+  /// Opens a yes or no question before anything is deleted.
+  void askBeforeDelete(String title, VoidCallback onYes) {
+    showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: ColorResources.background,
-          title: Text('Remove Product'),
-          content: Text('Remove $name from the database?'),
+          title: Text(title),
+          content: const Text('This action cannot be undone.'),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, false);
-              },
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: ColorResources.primary),
-              ),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () {
-                Navigator.pop(dialogContext, true);
+                Navigator.pop(dialogContext);
+                onYes();
               },
-              child: Text(
-                'Remove',
-                style: TextStyle(color: ColorResources.primary),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ColorResources.primary,
+                foregroundColor: ColorResources.white,
               ),
+              child: const Text('Delete'),
             ),
           ],
         );
       },
     );
+  }
 
-    if (!mounted || confirmed != true) {
-      return;
-    }
+  void removeItem(String id) {
+    askBeforeDelete('Delete this product?', () {
+      setState(() {
+        products.removeWhere((item) => item['id'] == id);
+        selected.remove(id);
+      });
 
-    try {
-      await FirebaseFirestore.instance
-          .collection('products')
-          .doc(docId)
-          .delete();
-    } catch (error) {
-      if (mounted) {
-        showMessage('Could not remove the product. $error');
-      }
-      return;
-    }
-
-    if (mounted) {
       showMessage('Product removed.');
+    });
+  }
+
+  /// Removes every product that was ticked in one go.
+  void removeSelected() {
+    if (selected.isEmpty) {
+      showMessage('Select at least one product first.');
+      return;
+    }
+
+    askBeforeDelete('Delete ${selected.length} products?', () {
+      setState(() {
+        products.removeWhere((item) => selected.contains(item['id']));
+        selected.clear();
+      });
+
+      showMessage('Selected products removed.');
+    });
+  }
+
+  /// Ticks every product, or unticks them all when all are already ticked.
+  void toggleAll(List<Map<String, dynamic>> visible) {
+    final allTicked = visible.isNotEmpty &&
+        visible.every((item) => selected.contains(item['id']));
+
+    setState(() {
+      if (allTicked) {
+        selected.clear();
+      } else {
+        selected.addAll(visible.map((item) => '${item['id']}'));
+      }
+    });
+  }
+
+  /// Waits for the add or edit form to finish, then refreshes the list.
+  Future<void> openForm(Widget page) async {
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => page),
+    );
+
+    if (changed == true) {
+      setState(() {});
+      showMessage('List updated.');
     }
   }
 
-  // Turns the raw Firestore numbers into readable text.
   String showPrice(dynamic value) {
     if (value is num) {
-      return value.toStringAsFixed(2);
+      return value.toStringAsFixed(0);
     }
     return '$value';
   }
 
-  Widget productCard(String docId, Map<String, dynamic> product) {
-    final name = '${product['name'] ?? ''}';
+  Widget productCard(Map<String, dynamic> product) {
+    final id = '${product['id']}';
 
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      padding: EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: ColorResources.white,
         border: Border.all(color: ColorResources.border),
@@ -95,39 +134,53 @@ class _ManageProductsPageState extends State<ManageProductsPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Checkbox to tick more than one product together.
+          Checkbox(
+            value: selected.contains(id),
+            onChanged: (value) {
+              setState(() {
+                if (value == true) {
+                  selected.add(id);
+                } else {
+                  selected.remove(id);
+                }
+              });
+            },
+          ),
+
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.asset(
               product['image'] ?? 'assets/images/club_prime.png',
-              width: 75,
+              width: 70,
               height: 90,
               fit: BoxFit.cover,
             ),
           ),
 
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
 
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
-                  style: TextStyle(
+                  '${product['name']}',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: ColorResources.heading,
                   ),
                 ),
 
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
 
                 Text(
-                  '${product['brand'] ?? ''}',
-                  style: TextStyle(color: ColorResources.text),
+                  '${product['brand']}',
+                  style: const TextStyle(color: ColorResources.text),
                 ),
 
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
 
                 Wrap(
                   spacing: 8,
@@ -135,7 +188,7 @@ class _ManageProductsPageState extends State<ManageProductsPage> {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Container(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 4,
                       ),
@@ -144,8 +197,8 @@ class _ManageProductsPageState extends State<ManageProductsPage> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        '${product['thickness'] ?? ''}',
-                        style: TextStyle(
+                        '${product['thickness']}',
+                        style: const TextStyle(
                           fontSize: 12,
                           color: ColorResources.text,
                         ),
@@ -153,7 +206,7 @@ class _ManageProductsPageState extends State<ManageProductsPage> {
                     ),
                     Text(
                       '₹${showPrice(product['price'])}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: ColorResources.primary,
                       ),
@@ -161,7 +214,7 @@ class _ManageProductsPageState extends State<ManageProductsPage> {
                   ],
                 ),
 
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -169,24 +222,22 @@ class _ManageProductsPageState extends State<ManageProductsPage> {
                     IconButton(
                       tooltip: 'Edit product',
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => EditProductPage(),
+                        openForm(
+                          EditProductPage(
+                            items: products,
+                            index: products.indexOf(product),
                           ),
                         );
                       },
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.edit_outlined,
                         color: ColorResources.primary,
                       ),
                     ),
                     IconButton(
                       tooltip: 'Remove product',
-                      onPressed: () {
-                        deleteProduct(docId, name);
-                      },
-                      icon: Icon(
+                      onPressed: () => removeItem(id),
+                      icon: const Icon(
                         Icons.delete_outline,
                         color: ColorResources.primary,
                       ),
@@ -203,23 +254,40 @@ class _ManageProductsPageState extends State<ManageProductsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // where() filters the sample list, the same way it would filter live data.
+    final visible = products.where((product) {
+      final name = '${product['name']}'.toLowerCase();
+      final brand = '${product['brand']}'.toLowerCase();
+      return name.contains(search) || brand.contains(search);
+    }).toList();
+
     return Scaffold(
       backgroundColor: ColorResources.background,
       appBar: AppBar(
-        title: Text('Products'),
+        title: const Text('Products'),
         backgroundColor: ColorResources.background,
         foregroundColor: ColorResources.primary,
       ),
+
+      // FloatingActionButton is the quick way to add a new product.
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => openForm(AddProductPage(items: products)),
+        backgroundColor: ColorResources.primary,
+        foregroundColor: ColorResources.white,
+        tooltip: 'Add product',
+        child: const Icon(Icons.add),
+      ),
+
       body: SafeArea(
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   Expanded(
                     child: TextField(
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Search Product',
                         prefixIcon: Icon(
                           Icons.search,
@@ -234,86 +302,92 @@ class _ManageProductsPageState extends State<ManageProductsPage> {
                     ),
                   ),
 
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
 
                   ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AddProductPage(),
-                        ),
-                      );
-                    },
-                    icon: Icon(Icons.add),
-                    label: Text('Add'),
+                    onPressed: () => openForm(AddProductPage(items: products)),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add'),
                     style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ],
               ),
             ),
 
+            // The bar appears only when something is ticked.
+            AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              child: selected.isEmpty
+                  ? const SizedBox(width: double.infinity)
+                  : Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      color: ColorResources.primary,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${selected.length} selected',
+                            style: const TextStyle(
+                              color: ColorResources.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              TextButton(
+                                onPressed: () => toggleAll(visible),
+                                child: const Text(
+                                  'Select all',
+                                  style: TextStyle(color: ColorResources.white),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: removeSelected,
+                                child: const Text(
+                                  'Delete',
+                                  style: TextStyle(color: ColorResources.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+
             Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream:
-                    FirebaseFirestore.instance.collection('products').snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                      child: CircularProgressIndicator(
-                        color: ColorResources.primary,
+              child: visible.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'No product found.',
+                            style: TextStyle(color: ColorResources.text),
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                search = '';
+                              });
+                            },
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Clear search'),
+                          ),
+                        ],
                       ),
-                    );
-                  }
-
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text(
-                          'Could not load products.\n${snapshot.error}',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: ColorResources.text),
-                        ),
-                      ),
-                    );
-                  }
-
-                  final docs = snapshot.data?.docs ?? [];
-
-                  if (docs.isEmpty) {
-                    return SizedBox.shrink();
-                  }
-
-                  final visible = docs.where((doc) {
-                    final data = doc.data() as Map<String, dynamic>;
-                    final name = '${data['name'] ?? ''}'.toLowerCase();
-                    final brand = '${data['brand'] ?? ''}'.toLowerCase();
-                    return name.contains(search) || brand.contains(search);
-                  }).toList();
-
-                  if (visible.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'No products found.',
-                        style: TextStyle(color: ColorResources.text),
-                      ),
-                    );
-                  }
-
-                  return ListView(
-                    padding: EdgeInsets.all(16),
-                    children: visible
-                        .map((doc) => productCard(
-                              doc.id,
-                              doc.data() as Map<String, dynamic>,
-                            ))
-                        .toList(),
-                  );
-                },
-              ),
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: visible.map(productCard).toList(),
+                    ),
             ),
           ],
         ),

@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'admin/admin_login.dart';
 import 'guest/home.dart';
@@ -46,64 +45,20 @@ class _LoginPageState extends State<LoginPage> {
 
   bool isLoading = false;
 
-  // Signs the user in with Firebase Authentication.
-  Future<void> login() async {
+// Checks the form and opens the home screen.
+  /// The form is checked, then the app simply opens the home screen.
+  void login() {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final entered = emailController.text.trim();
-
-    // Firebase needs a real email address. If the user typed a mobile number
-    // we cannot use it for Firebase login, so we tell them clearly.
-    if (!entered.contains('@')) {
-      showMessage(
-        'Please enter your email address to log in. '
-        'Mobile number login is not available yet.',
-      );
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: entered,
-        password: passwordController.text,
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const GuestHomePage(),
-        ),
-        (route) => false,
-      );
-    } on FirebaseAuthException catch (error) {
-      if (error.code == 'wrong-password' ||
-          error.code == 'user-not-found' ||
-          error.code == 'invalid-credential') {
-        showMessage('Wrong email or password.');
-      } else if (error.code == 'user-disabled') {
-        showMessage('This account has been disabled.');
-      } else if (error.code == 'too-many-requests') {
-        showMessage('Too many attempts. Please try again later.');
-      } else {
-        showMessage('Could not log in. ${error.message}');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const GuestHomePage(),
+      ),
+      (route) => false,
+    );
   }
 
   @override

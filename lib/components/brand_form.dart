@@ -1,13 +1,21 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../resources/color_resources.dart';
 
 class BrandForm extends StatefulWidget {
   final bool isEditing;
 
+  // The list this form should add to or update, given by the Manage Brands
+  // screen so that the change is visible in the list.
+  final List<Map<String, dynamic>>? items;
+
+  // The position of the item being edited inside that list.
+  final int editIndex;
+
   const BrandForm({
     super.key,
     this.isEditing = false,
+    this.items,
+    this.editIndex = 0,
   });
 
   @override
@@ -60,6 +68,8 @@ class _BrandFormState extends State<BrandForm> {
   bool isLoading = false;
 
   // Writes the brand into the "brands" collection in Firestore.
+  // The brand is added to, or changed inside, the list that the
+  // Manage Brands screen passed in. Nothing is sent to a server.
   Future<void> saveBrand() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -70,31 +80,32 @@ class _BrandFormState extends State<BrandForm> {
     });
 
     try {
-      final data = <String, dynamic>{
+      final brand = <String, dynamic>{
+        'id': 'NEW' + DateTime.now().millisecondsSinceEpoch.toString(),
         'name': nameController.text.trim(),
         'description': descriptionController.text.trim(),
+        'image': 'assets/images/green_gold.png',
       };
 
-      if (widget.isEditing) {
-        await FirebaseFirestore.instance
-            .collection('brands')
-            .doc('B001')
-            .update(data);
-      } else {
-        await FirebaseFirestore.instance
-            .collection('brands')
-            .add(data);
+      if (widget.items != null) {
+        if (widget.isEditing) {
+          // Update replaces the item that sits at the given index.
+          widget.items![widget.editIndex] = brand;
+        } else {
+          // Add puts the new item at the end of the list.
+          widget.items!.add(brand);
+        }
       }
 
       if (!mounted) {
         return;
       }
 
-      showMessage(widget.isEditing ? 'Brand updated.' : 'Brand saved.');
+      showMessage(widget.isEditing ? 'Brand updated.' : 'Brand added.');
 
-      Future.delayed(const Duration(milliseconds: 600), () {
+      Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) {
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       });
     } catch (error) {
